@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,34 +12,28 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuth } from "@/contexts/auth-context"
 
-export default function RegisterPage() {
-  const [name, setName] = useState("")
+export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const { register } = useAuth()
+  const { login } = useAuth()
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      return
-    }
-
     setIsLoading(true)
 
     try {
-      const result = await register({ name, email, password })
+      const result = await login(email, password)
 
       if (!result.success) {
-        setError(result.message || "Registration failed")
+        setError(result.message || "Login failed")
       }
     } catch (error) {
-      setError("An error occurred during registration")
+      setError("An error occurred during login")
     } finally {
       setIsLoading(false)
     }
@@ -49,8 +44,8 @@ export default function RegisterPage() {
       <div className="max-w-md mx-auto">
         <Card className="animate-in fade-in slide-up">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
-            <CardDescription>Register to access healthcare services</CardDescription>
+            <CardTitle className="text-2xl font-bold">Login</CardTitle>
+            <CardDescription>Enter your credentials to access your account</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -59,17 +54,6 @@ export default function RegisterPage() {
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
-
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -84,7 +68,12 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                    Forgot password?
+                  </Link>
+                </div>
                 <Input
                   id="password"
                   type="password"
@@ -95,28 +84,22 @@ export default function RegisterPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
-              </div>
-
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Register"}
+                {isLoading ? "Logging in..." : "Login"}
               </Button>
+
+              <div className="text-center text-sm">
+                <p>Demo accounts:</p>
+                <p className="text-muted-foreground">patient@example.com / patient123</p>
+                <p className="text-muted-foreground">doctor@example.com / doctor123</p>
+              </div>
             </form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-center text-sm">
-              Already have an account?{" "}
-              <Link href="/login" className="text-primary hover:underline">
-                Login
+              Don't have an account?{" "}
+              <Link href="/register" className="text-primary hover:underline">
+                Register
               </Link>
             </div>
           </CardFooter>

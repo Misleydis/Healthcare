@@ -11,7 +11,7 @@ export default function HomePage() {
       <section className="relative bg-gradient-to-b from-primary to-primary/80 text-white py-16 overflow-hidden">
         <div className="absolute inset-0 z-0 opacity-20">
           <img
-            src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80"
+            src="/placeholder.svg?height=800&width=1920"
             alt="Healthcare background"
             className="w-full h-full object-cover"
           />
@@ -53,42 +53,42 @@ export default function HomePage() {
             title="Easy Registration"
             description="Create your profile and securely store your medical history and personal information."
             link="/register"
-            image="https://images.unsplash.com/photo-1576089172869-4f5f6f315620?ixlib=rb-1.2.1&auto=format&fit=crop&w=640&q=80"
+            image="/placeholder.svg?height=300&width=500"
           />
           <FeatureCard
             icon={<FileText className="h-10 w-10 text-primary" />}
             title="Health Assessment"
             description="Describe your symptoms and receive AI-powered health insights and recommendations."
             link="/assessment"
-            image="https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?ixlib=rb-1.2.1&auto=format&fit=crop&w=640&q=80"
+            image="/placeholder.svg?height=300&width=500"
           />
           <FeatureCard
             icon={<MessageSquare className="h-10 w-10 text-primary" />}
             title="Telemedicine"
             description="Connect with healthcare professionals through video consultations from anywhere."
             link="/telemedicine"
-            image="https://images.unsplash.com/photo-1622253692010-333f2da6031d?ixlib=rb-1.2.1&auto=format&fit=crop&w=640&q=80"
+            image="/placeholder.svg?height=300&width=500"
           />
           <FeatureCard
             icon={<Calendar className="h-10 w-10 text-primary" />}
             title="Treatment Plans"
             description="Receive personalized treatment plans and medication reminders to manage your health."
             link="/treatment"
-            image="https://images.unsplash.com/photo-1579684385127-1ef15d508118?ixlib=rb-1.2.1&auto=format&fit=crop&w=640&q=80"
+            image="/placeholder.svg?height=300&width=500"
           />
           <FeatureCard
             icon={<Clock className="h-10 w-10 text-primary" />}
             title="Health Monitoring"
             description="Track your health progress over time and receive adjustments to your treatment as needed."
             link="/monitoring"
-            image="https://images.unsplash.com/photo-1559447087-3b6c9b6c2c3e?ixlib=rb-1.2.1&auto=format&fit=crop&w=640&q=80"
+            image="/placeholder.svg?height=300&width=500"
           />
           <FeatureCard
             icon={<Shield className="h-10 w-10 text-primary" />}
             title="Data Protection"
             description="Your health data is protected with industry-standard security and privacy measures."
             link="/privacy"
-            image="https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixlib=rb-1.2.1&auto=format&fit=crop&w=640&q=80"
+            image="/placeholder.svg?height=300&width=500"
           />
         </div>
       </section>

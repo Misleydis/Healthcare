@@ -4,14 +4,13 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar } from "@/components/ui/calendar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Clock, Star, Video } from "lucide-react"
 
 export default function TelemedicinePage() {
-  const [date, setDate] = useState<Date | undefined>(new Date())
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0])
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -37,7 +36,19 @@ export default function TelemedicinePage() {
                 <CardDescription>Choose when you'd like to have your consultation</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Calendar mode="single" selected={date} onSelect={setDate} className="rounded-md border" />
+                {/* Replace Calendar with a simple date input */}
+                <div className="space-y-2">
+                  <label htmlFor="appointment-date" className="block text-sm font-medium">
+                    Appointment Date
+                  </label>
+                  <input
+                    type="date"
+                    id="appointment-date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2"
+                  />
+                </div>
 
                 <div className="space-y-2">
                   <h3 className="font-medium">Available Time Slots</h3>
@@ -81,7 +92,7 @@ export default function TelemedicinePage() {
                     rating={4.9}
                     reviews={124}
                     availability="Available today"
-                    image="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&h=300&q=80"
+                    image="/placeholder.svg?height=300&width=300"
                   />
 
                   <DoctorCard
@@ -90,7 +101,7 @@ export default function TelemedicinePage() {
                     rating={4.8}
                     reviews={98}
                     availability="Available tomorrow"
-                    image="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&h=300&q=80"
+                    image="/placeholder.svg?height=300&width=300"
                   />
 
                   <DoctorCard
@@ -99,7 +110,7 @@ export default function TelemedicinePage() {
                     rating={4.7}
                     reviews={86}
                     availability="Available today"
-                    image="https://images.unsplash.com/photo-1594824476967-48c8b964273f?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&h=300&q=80"
+                    image="/placeholder.svg?height=300&width=300"
                   />
 
                   <DoctorCard
@@ -108,7 +119,7 @@ export default function TelemedicinePage() {
                     rating={4.6}
                     reviews={112}
                     availability="Available today"
-                    image="https://images.unsplash.com/photo-1622902046580-2b47f47f5471?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&h=300&q=80"
+                    image="/placeholder.svg?height=300&width=300"
                   />
                 </div>
               </CardContent>
