@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { DashboardHeader } from "@/components/dashboard-header"
-import PatientRegistrationForm from "@/components/patient-registration-form"
+import TelehealthScheduleForm from "@/components/telehealth-schedule-form"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
-export default function PatientRegistration() {
+export default function TelehealthSchedule() {
   return (
     <div className="flex min-h-screen flex-col">
       <DashboardHeader />
@@ -17,18 +17,18 @@ export default function PatientRegistration() {
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <h2 className="text-3xl font-bold tracking-tight">Patient Registration</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Schedule Telehealth Consultation</h2>
         </div>
 
         <Card className="mx-auto max-w-4xl">
           <CardHeader>
-            <CardTitle>Register New Patient</CardTitle>
+            <CardTitle>New Telehealth Session</CardTitle>
             <CardDescription>
-              Add a new patient to the MJ's Health Hub system. All fields marked with * are required.
+              Schedule a virtual consultation between a patient and healthcare provider.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <PatientRegistrationForm />
+            <TelehealthScheduleForm />
           </CardContent>
         </Card>
       </main>
