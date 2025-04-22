@@ -1,187 +1,151 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, Users, Video, Brain, Bell } from "lucide-react"
 import Link from "next/link"
-import HealthMetricsChart from "@/components/health-metrics-chart"
-import RecentPatients from "@/components/recent-patients"
-import UpcomingAppointments from "@/components/upcoming-appointments"
-import AIRecommendations from "@/components/ai-recommendations"
-import { DashboardHeader } from "@/components/dashboard-header"
+import { Button } from "@/components/ui/button"
+import { ArrowRight, Activity, Users, Video, Brain, Shield } from "lucide-react"
+import { LandingHeader } from "@/components/landing-header"
+import { LandingFooter } from "@/components/landing-footer"
 
-export default function Dashboard() {
+export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col">
-      <DashboardHeader />
+      <LandingHeader />
 
-      <main className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-          <div className="flex items-center space-x-2">
-            <Button>
-              <Bell className="mr-2 h-4 w-4" />
-              Notifications
-            </Button>
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="relative overflow-hidden bg-gradient-to-b from-emerald-50 to-white py-20 md:py-32">
+          <div className="container relative z-10 mx-auto px-4 text-center sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-4xl">
+              <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
+                <span className="block">Transforming Rural Healthcare</span>
+                <span className="block text-emerald-600">with AI and Telemedicine</span>
+              </h1>
+              <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-600">
+                MJ's Health Hub brings advanced healthcare to rural Zimbabwe through machine learning and telemedicine,
+                improving access to quality healthcare services for underserved communities.
+              </p>
+              <div className="mt-10 flex items-center justify-center gap-4">
+                <Button asChild size="lg" className="rounded-full px-8">
+                  <Link href="/login">Get Started</Link>
+                </Button>
+                <Button asChild variant="outline" size="lg" className="rounded-full px-8">
+                  <Link href="#features">Learn More</Link>
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="patients">Patients</TabsTrigger>
-            <TabsTrigger value="telehealth">Telehealth</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          </TabsList>
+          {/* Background Elements */}
+          <div className="absolute -top-24 right-0 -z-10 opacity-20">
+            <Activity className="h-64 w-64 rotate-12 text-emerald-500" />
+          </div>
+          <div className="absolute -bottom-16 left-0 -z-10 opacity-20">
+            <Brain className="h-48 w-48 -rotate-12 text-emerald-500" />
+          </div>
+        </section>
 
-          <TabsContent value="overview" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Patients</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">1,284</div>
-                  <p className="text-xs text-muted-foreground">+24% from last month</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Telehealth Sessions</CardTitle>
-                  <Video className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">432</div>
-                  <p className="text-xs text-muted-foreground">+18% from last month</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">AI Recommendations</CardTitle>
-                  <Brain className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">892</div>
-                  <p className="text-xs text-muted-foreground">+42% from last month</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Upcoming Appointments</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">56</div>
-                  <p className="text-xs text-muted-foreground">For the next 7 days</p>
-                </CardContent>
-              </Card>
+        {/* Features Section */}
+        <section id="features" className="py-20">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+                Revolutionizing Healthcare Delivery
+              </h2>
+              <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-600">
+                Our platform combines cutting-edge technology with healthcare expertise to serve rural communities.
+              </p>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-              <Card className="col-span-4">
-                <CardHeader>
-                  <CardTitle>Health Metrics Overview</CardTitle>
-                  <CardDescription>Patient health trends across rural Zimbabwe</CardDescription>
-                </CardHeader>
-                <CardContent className="pl-2">
-                  <HealthMetricsChart />
-                </CardContent>
-              </Card>
-
-              <Card className="col-span-3">
-                <CardHeader>
-                  <CardTitle>AI-Powered Recommendations</CardTitle>
-                  <CardDescription>ML-generated insights based on patient data</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <AIRecommendations />
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-              <Card className="col-span-1">
-                <CardHeader>
-                  <CardTitle>Recent Patients</CardTitle>
-                  <CardDescription>Newly registered patients in the system</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <RecentPatients />
-                </CardContent>
-              </Card>
-
-              <Card className="col-span-1">
-                <CardHeader>
-                  <CardTitle>Upcoming Telehealth Sessions</CardTitle>
-                  <CardDescription>Scheduled virtual consultations</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <UpcomingAppointments />
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="patients" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Patient Management</CardTitle>
-                <CardDescription>Register new patients and manage existing records</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <Button asChild>
-                    <Link href="/register">Register New Patient</Link>
-                  </Button>
-                  <Button variant="outline">Import Patient Records</Button>
+            <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {/* Feature 1 */}
+              <div className="rounded-xl border bg-white p-6 shadow-sm transition-all hover:shadow-md">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+                  <Brain className="h-6 w-6 text-emerald-600" />
                 </div>
-                <p>
-                  Access the patient registration system to add new patients to the database or manage existing patient
-                  records.
+                <h3 className="mb-2 text-xl font-bold">ML-Powered Diagnostics</h3>
+                <p className="text-gray-600">
+                  Our machine learning algorithms analyze patient data to provide accurate diagnostic suggestions and
+                  treatment recommendations.
                 </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </div>
 
-          <TabsContent value="telehealth" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Telehealth Services</CardTitle>
-                <CardDescription>Schedule and conduct virtual consultations</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <Button asChild>
-                    <Link href="/telehealth/schedule">Schedule Consultation</Link>
-                  </Button>
-                  <Button variant="outline" asChild>
-                    <Link href="/telehealth/join">Join Consultation</Link>
-                  </Button>
+              {/* Feature 2 */}
+              <div className="rounded-xl border bg-white p-6 shadow-sm transition-all hover:shadow-md">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+                  <Video className="h-6 w-6 text-emerald-600" />
                 </div>
-                <p>Connect rural patients with healthcare professionals through secure video consultations.</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="analytics" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Health Analytics</CardTitle>
-                <CardDescription>ML-powered insights and population health trends</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="mb-4">
-                  View analytics on patient health trends and ML-generated insights for rural Zimbabwe.
+                <h3 className="mb-2 text-xl font-bold">Telehealth Consultations</h3>
+                <p className="text-gray-600">
+                  Connect patients with healthcare professionals through secure video consultations, reducing the need
+                  for travel.
                 </p>
-                <Button>Generate Health Report</Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              </div>
+
+              {/* Feature 3 */}
+              <div className="rounded-xl border bg-white p-6 shadow-sm transition-all hover:shadow-md">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+                  <Users className="h-6 w-6 text-emerald-600" />
+                </div>
+                <h3 className="mb-2 text-xl font-bold">Patient Management</h3>
+                <p className="text-gray-600">
+                  Comprehensive patient registration and management system to track health records and treatment
+                  history.
+                </p>
+              </div>
+
+              {/* Feature 4 */}
+              <div className="rounded-xl border bg-white p-6 shadow-sm transition-all hover:shadow-md">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+                  <Activity className="h-6 w-6 text-emerald-600" />
+                </div>
+                <h3 className="mb-2 text-xl font-bold">Health Monitoring</h3>
+                <p className="text-gray-600">
+                  Continuous monitoring of patient health metrics and automated alerts for critical conditions.
+                </p>
+              </div>
+
+              {/* Feature 5 */}
+              <div className="rounded-xl border bg-white p-6 shadow-sm transition-all hover:shadow-md">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+                  <Shield className="h-6 w-6 text-emerald-600" />
+                </div>
+                <h3 className="mb-2 text-xl font-bold">Data Security</h3>
+                <p className="text-gray-600">
+                  Advanced encryption and security measures to protect sensitive patient information and ensure privacy.
+                </p>
+              </div>
+
+              {/* Feature 6 */}
+              <div className="rounded-xl border bg-white p-6 shadow-sm transition-all hover:shadow-md">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+                  <ArrowRight className="h-6 w-6 text-emerald-600" />
+                </div>
+                <h3 className="mb-2 text-xl font-bold">Offline Capabilities</h3>
+                <p className="text-gray-600">
+                  Designed to work in areas with limited connectivity, with offline data storage and synchronization.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="bg-emerald-600 py-16">
+          <div className="container mx-auto px-4 text-center sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              Ready to transform healthcare delivery?
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-emerald-100">
+              Join MJ's Health Hub today and help bring quality healthcare to rural Zimbabwe.
+            </p>
+            <div className="mt-8">
+              <Button asChild size="lg" variant="secondary" className="rounded-full px-8">
+                <Link href="/register">Register Now</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
       </main>
+
+      <LandingFooter />
     </div>
   )
 }

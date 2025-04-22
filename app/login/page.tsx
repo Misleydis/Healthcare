@@ -12,28 +12,20 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Activity, AlertCircle, Loader2 } from "lucide-react"
-import useAuthStore from "@/lib/auth-store"
+import { useAuthStore } from "@/lib"
 
-const formSchema = z
-  .object({
-    email: z.string().email({
-      message: "Please enter a valid email address.",
-    }),
-    password: z.string().min(6, {
-      message: "Password must be at least 6 characters.",
-    }),
-    confirmPassword: z.string().min(6, {
-      message: "Password must be at least 6 characters.",
-    }),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  })
+const formSchema = z.object({
+  email: z.string().email({
+    message: "Please enter a valid email address.",
+  }),
+  password: z.string().min(6, {
+    message: "Password must be at least 6 characters.",
+  }),
+})
 
-export default function RegisterPage() {
+export default function LoginPage() {
   const router = useRouter()
-  const { register, loading, error } = useAuthStore()
+  const { login, loading, error } = useAuthStore()
   const [authError, setAuthError] = useState<string | null>(error)
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -41,13 +33,12 @@ export default function RegisterPage() {
     defaultValues: {
       email: "",
       password: "",
-      confirmPassword: "",
     },
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setAuthError(null)
-    const success = await register(values.email, values.password)
+    const success = await login(values.email, values.password)
     if (success) {
       router.push("/dashboard")
     }
@@ -64,8 +55,8 @@ export default function RegisterPage() {
 
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-          <CardDescription>Enter your details to create your account</CardDescription>
+          <CardTitle className="text-2xl font-bold">Log in</CardTitle>
+          <CardDescription>Enter your email and password to access your account</CardDescription>
         </CardHeader>
         <CardContent>
           {authError && (
@@ -98,21 +89,7 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Create a password" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="Confirm your password" {...field} />
+                      <Input type="password" placeholder="Enter your password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -123,20 +100,25 @@ export default function RegisterPage() {
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating account...
+                    Logging in...
                   </>
                 ) : (
-                  "Create account"
+                  "Log in"
                 )}
               </Button>
             </form>
           </Form>
         </CardContent>
-        <CardFooter>
-          <div className="text-center text-sm w-full">
-            Already have an account?{" "}
-            <Link href="/login" className="text-emerald-600 hover:text-emerald-700">
-              Log in
+        <CardFooter className="flex flex-col space-y-4">
+          <div className="text-center text-sm">
+            <Link href="#" className="text-emerald-600 hover:text-emerald-700">
+              Forgot your password?
+            </Link>
+          </div>
+          <div className="text-center text-sm">
+            Don't have an account?{" "}
+            <Link href="/register" className="text-emerald-600 hover:text-emerald-700">
+              Sign up
             </Link>
           </div>
         </CardFooter>
