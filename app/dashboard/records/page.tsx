@@ -22,11 +22,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/components/ui/use-toast"
-import { Search, Plus, Download, Upload, Edit, Trash2, Eye, Calendar } from "lucide-react"
+import { Search, Plus, Download, Upload, Edit, Trash2, Eye, Calendar, FileText } from "lucide-react"
 import { format } from "date-fns"
+import useAuthStore from "@/lib/auth-store"
 
 // Generate random patient records
-const generatePatientRecords = (count = 10) => {
+const generatePatientRecords = (count = 10, isPatient = false, patientName = "") => {
   const patientNames = [
     "Tendai Moyo",
     "Chipo Ncube",
@@ -74,14 +75,15 @@ const generatePatientRecords = (count = 10) => {
     const recordDate = new Date(today)
     recordDate.setDate(today.getDate() - Math.floor(Math.random() * 180))
 
-    const patientName = patientNames[Math.floor(Math.random() * patientNames.length)]
+    const patient = patientNames[Math.floor(Math.random() * patientNames.length)]
+    const patientNameValue = isPatient ? patientName : patient
     const recordType = recordTypes[Math.floor(Math.random() * recordTypes.length)]
     const diagnosis = diagnoses[Math.floor(Math.random() * diagnoses.length)]
     const doctor = doctors[Math.floor(Math.random() * doctors.length)]
 
     return {
       id: i + 1,
-      patientName,
+      patientName: patientNameValue,
       patientId: `P${1000 + Math.floor(Math.random() * 9000)}`,
       recordType,
       diagnosis,
@@ -90,7 +92,7 @@ const generatePatientRecords = (count = 10) => {
       formattedDate: format(recordDate, "MMM d, yyyy"),
       notes: `Patient presented with symptoms of ${diagnosis.toLowerCase()}. Recommended treatment and follow-up in 2 weeks.`,
       status: Math.random() > 0.3 ? "Complete" : "Pending",
-      initials: patientName
+      initials: patientNameValue
         .split(" ")
         .map((n) => n[0])
         .join(""),
@@ -99,6 +101,14 @@ const generatePatientRecords = (count = 10) => {
 }
 
 export default function HealthRecordsPage() {
+  const { userData } = useAuthStore()
+  const isPatient = userData?.role === "patient"
+  const isDoctor = userData?.role === "doctor"
+  const isNurse = userData?.role === "nurse"
+  const isAdmin = userData?.role === "admin"
+
+  const fullName = userData ? `${userData.firstName} ${userData.lastName}` : "User"
+
   const [records, setRecords] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -114,18 +124,21 @@ export default function HealthRecordsPage() {
     diagnosis: "",
     notes: "",
   })
+  const [showShareDialog, setShowShareDialog] = useState(false)
+  const [shareEmail, setShareEmail] = useState("")
+  const [shareLoading, setShareLoading] = useState(false)
 
   const { toast } = useToast()
 
   useEffect(() => {
     // Simulate API call
     const timer = setTimeout(() => {
-      setRecords(generatePatientRecords(30))
+      setRecords(generatePatientRecords(30, isPatient, fullName))
       setLoading(false)
     }, 1500)
 
     return () => clearTimeout(timer)
-  }, [])
+  }, [isPatient, fullName])
 
   // Filter records based on search term
   const filteredRecords = records.filter((record) => {
@@ -179,16 +192,21 @@ export default function HealthRecordsPage() {
     // Simulate add operation
     const newRecord = {
       id: records.length + 1,
-      patientName: "New Patient",
+      patientName: isPatient ? fullName : "New Patient",
       patientId: newRecordData.patientId,
       recordType: newRecordData.recordType,
       diagnosis: newRecordData.diagnosis,
-      doctor: "Current User",
+      doctor: isDoctor ? `Dr. ${userData?.lastName}` : "Current User",
       date: new Date(),
       formattedDate: format(new Date(), "MMM d, yyyy"),
       notes: newRecordData.notes,
       status: "Complete",
-      initials: "NP",
+      initials: isPatient
+        ? fullName
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+        : "NP",
     }
 
     setRecords([newRecord, ...records])
@@ -208,6 +226,29 @@ export default function HealthRecordsPage() {
     })
   }
 
+  const handleShareRecord = () => {
+    setShareLoading(true)
+
+    // Simulate sharing process
+    setTimeout(() => {
+      setShareLoading(false)
+      setShowShareDialog(false)
+
+      toast({
+        title: "Record shared",
+        description: `Record has been shared with ${shareEmail}`,
+      })
+    }, 1500)
+  }
+
+  const downloadRecord = () => {
+    // Simulate download
+    toast({
+      title: "Record downloaded",
+      description: "The health record has been downloaded as PDF.",
+    })
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       <DashboardHeader />
@@ -215,28 +256,34 @@ export default function HealthRecordsPage() {
       <main className="flex-1 space-y-4 p-8 pt-6">
         <div className="flex flex-col justify-between space-y-4 md:flex-row md:items-center md:space-y-0">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Health Records</h2>
-            <p className="text-muted-foreground">View and manage patient health records</p>
+            <h2 className="text-3xl font-bold tracking-tight">{isPatient ? "My Health Records" : "Health Records"}</h2>
+            <p className="text-muted-foreground">
+              {isPatient ? "View and manage your personal health records" : "View and manage patient health records"}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <div className="relative w-full md:w-auto">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search records..."
+                placeholder={isPatient ? "Search my records..." : "Search records..."}
                 className="w-full pl-8 md:w-[300px]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button>
-              <Upload className="mr-2 h-4 w-4" />
-              Import
-            </Button>
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Record
-            </Button>
+            {!isPatient && (
+              <Button>
+                <Upload className="mr-2 h-4 w-4" />
+                Import
+              </Button>
+            )}
+            {(isDoctor || isNurse || isAdmin) && (
+              <Button onClick={() => setIsAddDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Record
+              </Button>
+            )}
           </div>
         </div>
 
@@ -252,8 +299,12 @@ export default function HealthRecordsPage() {
           <TabsContent value="all" className="space-y-4">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle>Patient Health Records</CardTitle>
-                <CardDescription>View, edit, and manage comprehensive patient health records</CardDescription>
+                <CardTitle>{isPatient ? "My Health Records" : "Patient Health Records"}</CardTitle>
+                <CardDescription>
+                  {isPatient
+                    ? "View your comprehensive health records"
+                    : "View, edit, and manage comprehensive patient health records"}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {loading ? (
@@ -273,7 +324,7 @@ export default function HealthRecordsPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Patient</TableHead>
+                          {!isPatient && <TableHead>Patient</TableHead>}
                           <TableHead>Record Type</TableHead>
                           <TableHead>Diagnosis</TableHead>
                           <TableHead>Doctor</TableHead>
@@ -285,25 +336,29 @@ export default function HealthRecordsPage() {
                       <TableBody>
                         {filteredRecords.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={7} className="h-24 text-center">
+                            <TableCell colSpan={isPatient ? 6 : 7} className="h-24 text-center">
                               No records found.
                             </TableCell>
                           </TableRow>
                         ) : (
                           filteredRecords.slice(0, 10).map((record) => (
                             <TableRow key={record.id}>
-                              <TableCell className="font-medium">
-                                <div className="flex items-center gap-3">
-                                  <Avatar>
-                                    <AvatarImage src={`/placeholder.svg?height=40&width=40&text=${record.initials}`} />
-                                    <AvatarFallback>{record.initials}</AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <div className="font-medium">{record.patientName}</div>
-                                    <div className="text-xs text-muted-foreground">ID: {record.patientId}</div>
+                              {!isPatient && (
+                                <TableCell className="font-medium">
+                                  <div className="flex items-center gap-3">
+                                    <Avatar>
+                                      <AvatarImage
+                                        src={`/placeholder.svg?height=40&width=40&text=${record.initials}`}
+                                      />
+                                      <AvatarFallback>{record.initials}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <div className="font-medium">{record.patientName}</div>
+                                      <div className="text-xs text-muted-foreground">ID: {record.patientId}</div>
+                                    </div>
                                   </div>
-                                </div>
-                              </TableCell>
+                                </TableCell>
+                              )}
                               <TableCell>{record.recordType}</TableCell>
                               <TableCell>{record.diagnosis}</TableCell>
                               <TableCell>{record.doctor}</TableCell>
@@ -321,12 +376,16 @@ export default function HealthRecordsPage() {
                                   <Button variant="ghost" size="icon" onClick={() => handleViewRecord(record)}>
                                     <Eye className="h-4 w-4" />
                                   </Button>
-                                  <Button variant="ghost" size="icon" onClick={() => handleEditRecord(record)}>
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button variant="ghost" size="icon" onClick={() => handleDeleteRecord(record)}>
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  {(isDoctor || isNurse || isAdmin) && (
+                                    <Button variant="ghost" size="icon" onClick={() => handleEditRecord(record)}>
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                  {(isDoctor || isAdmin) && (
+                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteRecord(record)}>
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -460,10 +519,24 @@ export default function HealthRecordsPage() {
                   <Calendar className="mr-1 h-4 w-4" />
                   Created on {selectedRecord.formattedDate}
                 </div>
-                <Button variant="outline" onClick={() => handleEditRecord(selectedRecord)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit Record
-                </Button>
+                <div className="flex gap-2">
+                  {isPatient && (
+                    <Button variant="outline" onClick={() => setShowShareDialog(true)}>
+                      <FileText className="mr-2 h-4 w-4" />
+                      Share Record
+                    </Button>
+                  )}
+                  <Button variant="outline" onClick={downloadRecord}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download
+                  </Button>
+                  {(isDoctor || isNurse || isAdmin) && (
+                    <Button variant="outline" onClick={() => handleEditRecord(selectedRecord)}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit Record
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -600,6 +673,36 @@ export default function HealthRecordsPage() {
                 Cancel
               </Button>
               <Button onClick={handleAddRecord}>Create Record</Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Record Dialog */}
+      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Share Health Record</DialogTitle>
+            <DialogDescription>Share this health record with another healthcare provider</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="shareEmail">Healthcare Provider Email</Label>
+              <Input
+                id="shareEmail"
+                type="email"
+                placeholder="doctor@example.com"
+                value={shareEmail}
+                onChange={(e) => setShareEmail(e.target.value)}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowShareDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleShareRecord} disabled={shareLoading || !shareEmail}>
+                {shareLoading ? "Sharing..." : "Share Record"}
+              </Button>
             </DialogFooter>
           </div>
         </DialogContent>

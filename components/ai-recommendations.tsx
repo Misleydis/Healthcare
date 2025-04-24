@@ -1,123 +1,97 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Brain, AlertTriangle, TrendingUp, Pill, Activity, MapPin } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
+import useAuthStore from "@/lib/auth-store"
 
-// Generate random AI recommendations
-const generateRecommendations = (extended = false) => {
-  const baseRecommendations = [
+// Generate random recommendations
+const generateRecommendations = (isDoctor: boolean, extended = false) => {
+  const patientRecommendations = [
     {
       id: 1,
-      title: "Malaria Prevention Campaign",
-      description: "ML analysis suggests increased risk of malaria in Bulawayo region due to recent rainfall patterns.",
-      type: "Prevention",
-      priority: "High",
-      icon: AlertTriangle,
-      iconColor: "text-red-500",
-      details:
-        "Predictive models show a 68% probability of increased malaria cases in the next 30 days based on weather patterns, historical data, and current case reports.",
-      action: "Initiate targeted prevention campaign",
+      title: "Increase daily water intake",
+      description: "Based on your health data, we recommend drinking at least 2 liters of water daily.",
+      priority: "medium",
     },
     {
       id: 2,
-      title: "Diabetes Screening Initiative",
-      description: "Patient data indicates 24% increase in diabetes symptoms. Recommend targeted screening program.",
-      type: "Screening",
-      priority: "Medium",
-      icon: TrendingUp,
-      iconColor: "text-amber-500",
-      details:
-        "Analysis of recent patient visits shows an uptick in symptoms associated with undiagnosed diabetes, particularly in the 40-60 age demographic.",
-      action: "Schedule community screening event",
+      title: "Schedule follow-up appointment",
+      description: "Your last checkup indicates you should schedule a follow-up within 3 months.",
+      priority: "high",
     },
     {
       id: 3,
-      title: "Medication Supply Optimization",
-      description: "Predictive analysis shows potential shortage of hypertension medication in Mutare district.",
-      type: "Supply Chain",
-      priority: "Medium",
-      icon: Pill,
-      iconColor: "text-blue-500",
-      details:
-        "Based on current prescription rates and supply chain data, hypertension medications will reach critical levels within 3 weeks.",
-      action: "Request additional medication supply",
+      title: "Consider vitamin D supplement",
+      description: "Your recent blood work shows slightly low vitamin D levels.",
+      priority: "low",
     },
   ]
 
-  if (extended) {
-    return [
-      ...baseRecommendations,
+  const doctorRecommendations = [
+    {
+      id: 1,
+      title: "Patient compliance alert",
+      description: "3 patients have missed their medication schedule this week.",
+      priority: "high",
+    },
+    {
+      id: 2,
+      title: "Appointment optimization",
+      description: "Scheduling more appointments on Wednesday could improve clinic efficiency by 15%.",
+      priority: "medium",
+    },
+    {
+      id: 3,
+      title: "Treatment pattern insight",
+      description: "Your hypertension treatment approach shows 22% better outcomes than average.",
+      priority: "low",
+    },
+  ]
+
+  if (extended && isDoctor) {
+    doctorRecommendations.push(
       {
         id: 4,
-        title: "Respiratory Infection Cluster",
-        description: "ML model has detected a potential cluster of respiratory infections in Masvingo province.",
-        type: "Outbreak Detection",
-        priority: "High",
-        icon: Activity,
-        iconColor: "text-red-500",
-        details:
-          "Pattern recognition algorithms have identified an unusual increase in respiratory symptoms reported in telehealth consultations from the Masvingo area.",
-        action: "Investigate potential outbreak",
+        title: "Patient risk stratification",
+        description: "5 patients may benefit from preventative intervention based on risk factors.",
+        priority: "medium",
       },
       {
         id: 5,
-        title: "Prenatal Care Optimization",
-        description: "Analysis suggests improved outcomes with adjusted prenatal visit scheduling.",
-        type: "Care Protocol",
-        priority: "Low",
-        icon: MapPin,
-        iconColor: "text-green-500",
-        details:
-          "ML analysis of maternal health outcomes indicates that adjusting the frequency of prenatal visits based on risk factors could improve outcomes by 15%.",
-        action: "Review prenatal care protocols",
+        title: "Clinical documentation improvement",
+        description: "AI analysis suggests more detailed notes could improve care continuity.",
+        priority: "low",
       },
-    ]
+    )
   }
 
-  return baseRecommendations
+  return isDoctor ? doctorRecommendations : patientRecommendations
 }
 
-interface AIRecommendationsProps {
-  extended?: boolean
-}
-
-export default function AIRecommendations({ extended = false }: AIRecommendationsProps) {
+export default function AIRecommendations({ extended = false }: { extended?: boolean }) {
+  const { userData: user } = useAuthStore()
+  const isDoctor = user?.role === "doctor"
   const [recommendations, setRecommendations] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [expandedId, setExpandedId] = useState<number | null>(null)
 
   useEffect(() => {
     // Simulate API call
     const timer = setTimeout(() => {
-      setRecommendations(generateRecommendations(extended))
+      setRecommendations(generateRecommendations(isDoctor, extended))
       setLoading(false)
-    }, 1800)
+    }, 2000)
 
     return () => clearTimeout(timer)
-  }, [extended])
-
-  const toggleExpand = (id: number) => {
-    setExpandedId(expandedId === id ? null : id)
-  }
+  }, [isDoctor, extended])
 
   if (loading) {
     return (
       <div className="space-y-4">
-        {Array.from({ length: extended ? 5 : 3 }).map((_, i) => (
-          <div key={i} className="rounded-lg border p-4">
-            <div className="mb-2 flex items-center gap-2">
-              <Skeleton className="h-5 w-5 rounded-full" />
-              <Skeleton className="h-5 w-[70%]" />
-            </div>
-            <Skeleton className="mb-4 h-4 w-full" />
-            <div className="flex justify-between">
-              <Skeleton className="h-6 w-20" />
-              <Skeleton className="h-6 w-20" />
-            </div>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="flex flex-col space-y-2 p-2">
+            <div className="h-5 w-[70%] animate-pulse rounded bg-muted"></div>
+            <div className="h-4 w-[90%] animate-pulse rounded bg-muted"></div>
           </div>
         ))}
       </div>
@@ -126,62 +100,32 @@ export default function AIRecommendations({ extended = false }: AIRecommendation
 
   return (
     <div className="space-y-4">
-      {recommendations.map((rec) => {
-        const Icon = rec.icon
-        const isExpanded = expandedId === rec.id
-
-        return (
-          <Card
-            key={rec.id}
-            className={`rounded-lg border p-4 transition-all duration-200 ${isExpanded ? "ring-1 ring-emerald-500" : ""}`}
-          >
-            <div className="mb-2 flex items-center gap-2">
-              <Brain className="h-5 w-5 text-emerald-500" />
-              <h3 className="font-medium">{rec.title}</h3>
-            </div>
-            <p className="mb-3 text-sm text-muted-foreground">{rec.description}</p>
-
-            {isExpanded && (
-              <div className="mb-3 rounded-md bg-muted p-3 text-sm">
-                <p>{rec.details}</p>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between">
-              <Badge variant="outline" className="flex items-center gap-1">
-                <Icon className={`h-3 w-3 ${rec.iconColor}`} />
-                {rec.type}
-              </Badge>
-
-              <div className="flex items-center gap-2">
-                <Badge
-                  className={
-                    rec.priority === "High"
-                      ? "bg-red-500 hover:bg-red-600"
-                      : rec.priority === "Medium"
-                        ? "bg-amber-500 hover:bg-amber-600"
-                        : "bg-blue-500 hover:bg-blue-600"
-                  }
-                >
-                  {rec.priority} Priority
-                </Badge>
-
-                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => toggleExpand(rec.id)}>
-                  {isExpanded ? "Less" : "More"}
-                </Button>
+      {recommendations.map((recommendation) => (
+        <Card key={recommendation.id} className="overflow-hidden">
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="font-medium">{recommendation.title}</h4>
+                  <Badge
+                    variant={
+                      recommendation.priority === "high"
+                        ? "destructive"
+                        : recommendation.priority === "medium"
+                          ? "default"
+                          : "outline"
+                    }
+                    className="ml-2"
+                  >
+                    {recommendation.priority}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">{recommendation.description}</p>
               </div>
             </div>
-
-            {isExpanded && (
-              <div className="mt-3 text-right">
-                <Button size="sm" className="h-8 bg-emerald-600 hover:bg-emerald-700">
-                  {rec.action}
-                </Button>
-              </div>
-            )}
-          </Card>
-        )
-      })}
+          </CardContent>
+        </Card>
+      ))}
     </div>
   )
 }

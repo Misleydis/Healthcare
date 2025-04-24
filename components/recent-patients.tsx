@@ -37,7 +37,7 @@ const generatePatients = () => {
   })
 }
 
-export default function RecentPatients() {
+export function RecentPatients({ isPatientView = false }) {
   const [patients, setPatients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
