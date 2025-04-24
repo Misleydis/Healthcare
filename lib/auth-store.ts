@@ -1,166 +1,253 @@
 import { create } from "zustand"
-import api from "./api"
+import { persist } from "zustand/middleware"
 
-interface User {
-  _id: string
-  email: string
-  role: string
-  firstName?: string
-  lastName?: string
-  specialty?: string
-  phoneNumber?: string
-  address?: string
-}
-
-interface AuthState {
-  token: string | null
-  user: User | null
-  role: string | null
-  loading: boolean
-  error: string | null
-  initialized: boolean
-  login: (email: string, password: string) => Promise<boolean>
-  register: (email: string, password: string, role?: string) => Promise<boolean>
-  logout: () => void
-  updateProfile: (profileData: Partial<User>) => Promise<boolean>
-  fetchUserProfile: () => Promise<void>
-  checkAuth: () => Promise<boolean>
-}
-
-// Helper to safely access localStorage (only on client)
-const getLocalStorageItem = (key: string): string | null => {
+// Helper function to safely access localStorage
+const getLocalStorage = (key: string) => {
   if (typeof window !== "undefined") {
     return localStorage.getItem(key)
   }
   return null
 }
 
-const useAuthStore = create<AuthState>((set, get) => ({
-  token: getLocalStorageItem("auth_token"),
-  user: null,
-  role: getLocalStorageItem("auth_role"),
-  loading: false,
-  error: null,
-  initialized: false,
+// Helper function to safely set localStorage
+const setLocalStorage = (key: string, value: string) => {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(key, value)
+  }
+}
 
-  login: async (email: string, password: string) => {
-    set({ loading: true, error: null })
-    try {
-      const response = await api.post("/login", { email, password })
-      const { token, role } = response.data
+// Helper function to safely remove from localStorage
+const removeLocalStorage = (key: string) => {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(key)
+  }
+}
 
-      // Save to localStorage (client-side only)
-      if (typeof window !== "undefined") {
-        localStorage.setItem("auth_token", token)
-        localStorage.setItem("auth_role", role)
-      }
+export type UserRole = "admin" | "doctor" | "nurse" | "patient"
 
-      set({
-        token,
-        role,
-        loading: false,
-      })
+interface UserData {
+  _id?: string
+  email: string
+  firstName: string
+  lastName: string
+  role: UserRole
+  specialty?: string
+  phoneNumber?: string
+  address?: string
+  createdAt?: string
+}
 
-      // Fetch user profile after successful login
-      await get().fetchUserProfile()
+interface AuthState {
+  token: string | null
+  isAuthenticated: boolean
+  error: string | null
+  loading: boolean
+  userData: UserData | null
+  login: (email: string, password: string) => Promise<boolean>
+  register: (userData: {
+    email: string
+    password: string
+    firstName: string
+    lastName: string
+    role: UserRole
+    specialty?: string
+    phoneNumber?: string
+    address?: string
+  }) => Promise<boolean>
+  logout: () => void
+  updateUserData: (data: Partial<UserData>) => Promise<boolean>
+}
 
-      return true
-    } catch (error: any) {
-      set({
-        loading: false,
-        error: error.response?.data?.message || "Login failed",
-      })
-      return false
-    }
-  },
+// Mock API endpoint - in a real app, this would be your actual API URL
+const API_URL = "https://auth-backend-qyna.onrender.com/api"
 
-  register: async (email: string, password: string, role = "patient") => {
-    set({ loading: true, error: null })
-    try {
-      const response = await api.post("/register", { email, password, role })
-      const { token, role: userRole } = response.data
+const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      token: getLocalStorage("token") || null,
+      isAuthenticated: !!getLocalStorage("token"),
+      error: null,
+      loading: false,
+      userData: getLocalStorage("userData") ? JSON.parse(getLocalStorage("userData") || "{}") : null,
 
-      // Save to localStorage (client-side only)
-      if (typeof window !== "undefined") {
-        localStorage.setItem("auth_token", token)
-        localStorage.setItem("auth_role", userRole)
-      }
+      login: async (email, password) => {
+        set({ loading: true, error: null })
+        try {
+          // Simulate API call with a delay
+          await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      set({
-        token,
-        role: userRole,
-        loading: false,
-      })
+          // In a real app, this would be a fetch call to your API
+          // const response = await fetch(`${API_URL}/login`, {
+          //   method: 'POST',
+          //   headers: { 'Content-Type': 'application/json' },
+          //   body: JSON.stringify({ email, password }),
+          // });
+          // const data = await response.json();
+          // if (!response.ok) throw new Error(data.message || 'Login failed');
 
-      // Fetch user profile after successful registration
-      await get().fetchUserProfile()
+          // For demo purposes, we'll create mock user data based on email
+          let role: UserRole = "patient"
+          let specialty = ""
+          let firstName = email.split("@")[0]
+          let lastName = "User"
 
-      return true
-    } catch (error: any) {
-      set({
-        loading: false,
-        error: error.response?.data?.message || "Registration failed",
-      })
-      return false
-    }
-  },
+          // Determine role based on email prefix
+          if (email.includes("admin")) {
+            role = "admin"
+            firstName = "Admin"
+            lastName = "User"
+          } else if (email.includes("doctor")) {
+            role = "doctor"
+            firstName = "Doctor"
+            lastName = "Smith"
+            specialty = "General Medicine"
+          } else if (email.includes("nurse")) {
+            role = "nurse"
+            firstName = "Nurse"
+            lastName = "Johnson"
+            specialty = "General Care"
+          }
 
-  logout: () => {
-    // Clear localStorage (client-side only)
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("auth_token")
-      localStorage.removeItem("auth_role")
-    }
+          const userData = {
+            _id: `user_${Math.random().toString(36).substring(2, 9)}`,
+            email,
+            firstName,
+            lastName,
+            role,
+            specialty,
+            phoneNumber: "+263 7" + Math.floor(Math.random() * 10000000),
+            createdAt: new Date().toISOString(),
+          }
 
-    set({ token: null, user: null, role: null })
-  },
+          const token = "mock-jwt-token-" + Math.random().toString(36).substring(2)
 
-  updateProfile: async (profileData: Partial<User>) => {
-    set({ loading: true, error: null })
-    try {
-      const response = await api.put("/users/me", profileData)
-      set({ user: response.data, loading: false })
-      return true
-    } catch (error: any) {
-      set({
-        loading: false,
-        error: error.response?.data?.message || "Profile update failed",
-      })
-      return false
-    }
-  },
+          setLocalStorage("token", token)
+          setLocalStorage("userData", JSON.stringify(userData))
 
-  fetchUserProfile: async () => {
-    const { token } = get()
-    if (!token) return
+          set({
+            token,
+            isAuthenticated: true,
+            userData,
+            loading: false,
+          })
 
-    set({ loading: true, error: null })
-    try {
-      const response = await api.get("/users/me")
-      set({ user: response.data, loading: false, initialized: true })
-    } catch (error: any) {
-      set({
-        loading: false,
-        error: error.response?.data?.message || "Failed to fetch user profile",
-        initialized: true,
-      })
-    }
-  },
+          return true
+        } catch (error: any) {
+          set({
+            error: error.message || "Login failed",
+            loading: false,
+          })
+          return false
+        }
+      },
 
-  checkAuth: async () => {
-    const { token, initialized, fetchUserProfile } = get()
+      register: async (userData) => {
+        set({ loading: true, error: null })
+        try {
+          // Validate required fields
+          const { email, password, firstName, lastName, role } = userData
 
-    if (!token) {
-      set({ initialized: true })
-      return false
-    }
+          if (!email || !password || !firstName || !lastName) {
+            set({
+              error: "Please fill in all required fields",
+              loading: false,
+            })
+            return false
+          }
 
-    if (!initialized) {
-      await fetchUserProfile()
-    }
+          // Simulate API call with a delay
+          await new Promise((resolve) => setTimeout(resolve, 1500))
 
-    return !!get().user
-  },
-}))
+          // In a real app, this would be a fetch call to your API
+          // const response = await fetch(`${API_URL}/register`, {
+          //   method: 'POST',
+          //   headers: { 'Content-Type': 'application/json' },
+          //   body: JSON.stringify(userData),
+          // });
+          // const data = await response.json();
+          // if (!response.ok) throw new Error(data.message || 'Registration failed');
+
+          const newUserData = {
+            _id: `user_${Math.random().toString(36).substring(2, 9)}`,
+            email,
+            firstName,
+            lastName,
+            role,
+            specialty: userData.specialty || "",
+            phoneNumber: userData.phoneNumber || "",
+            address: userData.address || "",
+            createdAt: new Date().toISOString(),
+          }
+
+          const token = "mock-jwt-token-" + Math.random().toString(36).substring(2)
+
+          setLocalStorage("token", token)
+          setLocalStorage("userData", JSON.stringify(newUserData))
+
+          set({
+            token,
+            isAuthenticated: true,
+            userData: newUserData,
+            loading: false,
+          })
+
+          return true
+        } catch (error: any) {
+          set({
+            error: error.message || "Registration failed",
+            loading: false,
+          })
+          return false
+        }
+      },
+
+      logout: () => {
+        removeLocalStorage("token")
+        removeLocalStorage("userData")
+        set({ token: null, isAuthenticated: false, userData: null, error: null })
+      },
+
+      updateUserData: async (data) => {
+        set({ loading: true, error: null })
+        try {
+          // Simulate API call with a delay
+          await new Promise((resolve) => setTimeout(resolve, 1000))
+
+          // In a real app, this would be a fetch call to your API
+          // const response = await fetch(`${API_URL}/users/me`, {
+          //   method: 'PATCH',
+          //   headers: {
+          //     'Content-Type': 'application/json',
+          //     'Authorization': `Bearer ${get().token}`
+          //   },
+          //   body: JSON.stringify(data),
+          // });
+          // const updatedData = await response.json();
+          // if (!response.ok) throw new Error(updatedData.message || 'Update failed');
+
+          const updatedUserData = { ...get().userData, ...data } as UserData
+          setLocalStorage("userData", JSON.stringify(updatedUserData))
+
+          set({
+            userData: updatedUserData,
+            loading: false,
+          })
+
+          return true
+        } catch (error: any) {
+          set({
+            error: error.message || "Update failed",
+            loading: false,
+          })
+          return false
+        }
+      },
+    }),
+    {
+      name: "auth-storage",
+      partialize: (state) => ({ token: state.token, userData: state.userData }),
+    },
+  ),
+)
 
 export default useAuthStore
