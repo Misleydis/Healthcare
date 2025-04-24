@@ -26,9 +26,6 @@ import {
 } from "lucide-react"
 import { format, subHours, subDays, subMinutes } from "date-fns"
 
-// Update imports
-import { useNotificationStore } from "@/lib"
-
 // Generate notifications data
 const generateNotifications = () => {
   const now = new Date()
@@ -143,46 +140,40 @@ const generateNotifications = () => {
 }
 
 export default function NotificationsPage() {
-  // Replace the useState and useEffect for notifications with our notification store
-  // Remove these lines:
-  // const [notifications, setNotifications] = useState<any>(null);
-  // const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
   const [selectedNotifications, setSelectedNotifications] = useState<number[]>([])
   const [refreshing, setRefreshing] = useState(false)
 
   const { toast } = useToast()
 
-  // Add this inside the component:
-  const { notifications, loading, unreadCount, fetchNotifications, markAsRead, markAllAsRead, deleteNotification } =
-    useNotificationStore()
-
-  // Use useEffect to fetch notifications when the component mounts
   useEffect(() => {
-    fetchNotifications()
-  }, [fetchNotifications])
+    // Simulate API call
+    const timer = setTimeout(() => {
+      const notificationsData = generateNotifications()
+      notificationsData.all = [...notificationsData.unread, ...notificationsData.read]
+      setNotifications(notificationsData)
+      setLoading(false)
+    }, 1500)
 
-  // useEffect(() => {
-  //   // Simulate API call
-  //   const timer = setTimeout(() => {
-  //     const notificationsData = generateNotifications()
-  //     notificationsData.all = [...notificationsData.unread, ...notificationsData.read]
-  //     setNotifications(notificationsData)
-  //     setLoading(false)
-  //   }, 1500)
+    return () => clearTimeout(timer)
+  }, [])
 
-  //   return () => clearTimeout(timer)
-  // }, [])
-
-  // Update the handleRefresh function to use fetchNotifications from the store
   const handleRefresh = () => {
     setRefreshing(true)
-    fetchNotifications().finally(() => {
+
+    // Simulate refreshing data
+    setTimeout(() => {
+      const notificationsData = generateNotifications()
+      notificationsData.all = [...notificationsData.unread, ...notificationsData.read]
+      setNotifications(notificationsData)
       setRefreshing(false)
+
       toast({
         title: "Notifications refreshed",
         description: "Your notifications have been updated.",
       })
-    })
+    }, 1500)
   }
 
   const handleSelectNotification = (id: number) => {
@@ -201,13 +192,32 @@ export default function NotificationsPage() {
     }
   }
 
-  // Update the handleMarkAsRead function to use markAsRead from the store
-  const handleMarkAsRead = async () => {
+  const handleMarkAsRead = () => {
     if (selectedNotifications.length === 0) return
 
-    const promises = selectedNotifications.map((id) => markAsRead(id))
-    await Promise.all(promises)
+    // Simulate marking as read
+    const updatedNotifications = { ...notifications }
 
+    // Update unread notifications
+    updatedNotifications.unread = updatedNotifications.unread.filter(
+      (notification: any) => !selectedNotifications.includes(notification.id),
+    )
+
+    // Update read notifications and all notifications
+    updatedNotifications.all = updatedNotifications.all.map((notification: any) => {
+      if (selectedNotifications.includes(notification.id)) {
+        return { ...notification, read: true }
+      }
+      return notification
+    })
+
+    // Move selected notifications to read
+    const selectedNotificationsData = updatedNotifications.all.filter((notification: any) =>
+      selectedNotifications.includes(notification.id),
+    )
+    updatedNotifications.read = [...selectedNotificationsData, ...updatedNotifications.read]
+
+    setNotifications(updatedNotifications)
     setSelectedNotifications([])
 
     toast({
@@ -216,13 +226,24 @@ export default function NotificationsPage() {
     })
   }
 
-  // Update the handleDelete function to use deleteNotification from the store
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (selectedNotifications.length === 0) return
 
-    const promises = selectedNotifications.map((id) => deleteNotification(id))
-    await Promise.all(promises)
+    // Simulate deleting notifications
+    const updatedNotifications = { ...notifications }
 
+    // Remove from all categories
+    updatedNotifications.unread = updatedNotifications.unread.filter(
+      (notification: any) => !selectedNotifications.includes(notification.id),
+    )
+    updatedNotifications.read = updatedNotifications.read.filter(
+      (notification: any) => !selectedNotifications.includes(notification.id),
+    )
+    updatedNotifications.all = updatedNotifications.all.filter(
+      (notification: any) => !selectedNotifications.includes(notification.id),
+    )
+
+    setNotifications(updatedNotifications)
     setSelectedNotifications([])
 
     toast({

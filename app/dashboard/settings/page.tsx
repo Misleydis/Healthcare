@@ -18,9 +18,29 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/components/ui/use-toast"
 import { User, Bell, Shield, Smartphone, Moon, Sun, Save, Upload, LogOut, Lock, FileText } from "lucide-react"
 import useAuthStore from "@/lib/auth-store"
-import { useSettingsStore } from "@/lib"
 
 export default function SettingsPage() {
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [userProfile, setUserProfile] = useState<any>(null)
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    bio: "",
+    language: "english",
+    theme: "light",
+    notifications: {
+      email: true,
+      sms: false,
+      push: true,
+    },
+    security: {
+      twoFactor: false,
+      sessionTimeout: "30m",
+    },
+  })
+
   const { toast } = useToast()
   const { token, logout } = useAuthStore()
 
@@ -50,66 +70,34 @@ export default function SettingsPage() {
   const userEmail = getUserDisplayName()
   const userInitials = userEmail.substring(0, 2).toUpperCase()
 
-  // Replace the useState and useEffect for settings with our settings store
-  // Remove these lines:
-  // const [loading, setLoading] = useState(true);
-  // const [userProfile, setUserProfile] = useState<any>(null);
-  // const [formData, setFormData] = useState({...});
-
-  // Add this inside the component:
-  const { settings, loading: settingsLoading, fetchSettings, updateSettings } = useSettingsStore()
-  const { user, loading: userLoading, updateProfile } = useAuthStore()
-
-  const loading = settingsLoading || userLoading
-
-  // Use useEffect to fetch settings when the component mounts
   useEffect(() => {
-    fetchSettings()
-  }, [fetchSettings])
-
-  // Create a formData state that combines user and settings data
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    bio: "",
-    language: "english",
-    theme: "light",
-    notifications: {
-      email: true,
-      sms: false,
-      push: true,
-    },
-    security: {
-      twoFactor: false,
-      sessionTimeout: "30m",
-    },
-  })
-
-  // Update formData when user and settings are loaded
-  useEffect(() => {
-    if (user && settings) {
-      setFormData({
-        fullName: `${user.firstName || ""} ${user.lastName || ""}`.trim() || `Dr. ${userEmail}`,
-        email: user.email || `${userEmail}@mjshealthhub.org`,
-        phone: user.phoneNumber || `+263 7${Math.floor(Math.random() * 10000000)}`,
-        bio: user.specialty || "Healthcare professional specializing in rural medicine and telemedicine services.",
-        language: settings.language || "english",
-        theme: settings.theme || "light",
+    // Simulate API call to get user profile
+    const timer = setTimeout(() => {
+      const profile = {
+        fullName: "Dr. " + userEmail,
+        email: userEmail + "@mjshealthhub.org",
+        phone: "+263 7" + Math.floor(Math.random() * 10000000),
+        bio: "Healthcare professional specializing in rural medicine and telemedicine services.",
+        language: "english",
+        theme: "light",
         notifications: {
-          email: settings.notifications?.email || true,
-          sms: settings.notifications?.sms || false,
-          push: settings.notifications?.app || true,
+          email: true,
+          sms: false,
+          push: true,
         },
         security: {
           twoFactor: false,
           sessionTimeout: "30m",
         },
-      })
-    }
-  }, [user, settings, userEmail])
+      }
 
-  const [saving, setSaving] = useState(false)
+      setUserProfile(profile)
+      setFormData(profile)
+      setLoading(false)
+    }, 1500)
+
+    return () => clearTimeout(timer)
+  }, [userEmail])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -136,42 +124,19 @@ export default function SettingsPage() {
     })
   }
 
-  // Update the handleSaveProfile function to use updateProfile and updateSettings
-  const handleSaveProfile = async () => {
+  const handleSaveProfile = () => {
     setSaving(true)
 
-    try {
-      // Update user profile
-      await updateProfile({
-        firstName: formData.fullName.split(" ")[0],
-        lastName: formData.fullName.split(" ").slice(1).join(" "),
-        phoneNumber: formData.phone,
-      })
-
-      // Update settings
-      await updateSettings({
-        theme: formData.theme as "light" | "dark" | "system",
-        language: formData.language,
-        notifications: {
-          email: formData.notifications.email,
-          sms: formData.notifications.sms,
-          app: formData.notifications.push,
-        },
-      })
+    // Simulate API call to save profile
+    setTimeout(() => {
+      setUserProfile(formData)
+      setSaving(false)
 
       toast({
         title: "Profile updated",
         description: "Your profile settings have been saved successfully.",
       })
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update profile settings.",
-        variant: "destructive",
-      })
-    } finally {
-      setSaving(false)
-    }
+    }, 1500)
   }
 
   const handleLogout = () => {

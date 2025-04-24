@@ -12,14 +12,14 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Activity, AlertCircle, Loader2 } from "lucide-react"
-import { useAuthStore } from "@/lib"
+import useAuthStore from "@/lib/auth-store"
 
 const formSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address.",
   }),
-  password: z.string().min(6, {
-    message: "Password must be at least 6 characters.",
+  password: z.string().min(1, {
+    message: "Password is required.",
   }),
 })
 
@@ -27,6 +27,12 @@ export default function LoginPage() {
   const router = useRouter()
   const { login, loading, error } = useAuthStore()
   const [authError, setAuthError] = useState<string | null>(error)
+  const [demoAccounts] = useState([
+    { email: "admin@mjshealthhub.org", role: "Administrator" },
+    { email: "doctor@mjshealthhub.org", role: "Doctor" },
+    { email: "nurse@mjshealthhub.org", role: "Nurse" },
+    { email: "patient@mjshealthhub.org", role: "Patient" },
+  ])
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -44,6 +50,17 @@ export default function LoginPage() {
     }
   }
 
+  const loginWithDemoAccount = async (email: string) => {
+    form.setValue("email", email)
+    form.setValue("password", "password123")
+
+    setAuthError(null)
+    const success = await login(email, "password123")
+    if (success) {
+      router.push("/dashboard")
+    }
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
       <Link href="/" className="mb-8 flex items-center gap-2">
@@ -55,7 +72,7 @@ export default function LoginPage() {
 
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Log in</CardTitle>
+          <CardTitle className="text-2xl font-bold">Log in to your account</CardTitle>
           <CardDescription>Enter your email and password to access your account</CardDescription>
         </CardHeader>
         <CardContent>
@@ -108,14 +125,27 @@ export default function LoginPage() {
               </Button>
             </form>
           </Form>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <div className="text-center text-sm">
-            <Link href="#" className="text-emerald-600 hover:text-emerald-700">
-              Forgot your password?
-            </Link>
+
+          <div className="mt-6">
+            <p className="text-center text-sm font-medium text-muted-foreground mb-3">Or try a demo account</p>
+            <div className="grid grid-cols-2 gap-2">
+              {demoAccounts.map((account) => (
+                <Button
+                  key={account.email}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => loginWithDemoAccount(account.email)}
+                  disabled={loading}
+                  className="justify-start"
+                >
+                  <span className="truncate">{account.role}</span>
+                </Button>
+              ))}
+            </div>
           </div>
-          <div className="text-center text-sm">
+        </CardContent>
+        <CardFooter>
+          <div className="text-center text-sm w-full">
             Don't have an account?{" "}
             <Link href="/register" className="text-emerald-600 hover:text-emerald-700">
               Sign up

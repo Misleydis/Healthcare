@@ -18,44 +18,31 @@ import {
   X,
   Brain,
   Bell,
+  UserCog,
+  Stethoscope,
+  Clipboard,
+  CalendarClock,
 } from "lucide-react"
 import useAuthStore from "@/lib/auth-store"
 import { useToast } from "@/components/ui/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useMobile } from "@/hooks/use-mobile"
+import { Badge } from "@/components/ui/badge"
 
 export function DashboardSidebar() {
   const pathname = usePathname()
-  const { logout, userRole, token } = useAuthStore()
+  const { logout, userData } = useAuthStore()
   const { toast } = useToast()
   const isMobile = useMobile()
   const [isOpen, setIsOpen] = useState(!isMobile)
 
-  // Extract username from token or use a default
-  const getUserDisplayName = () => {
-    if (!token) return "User"
-
-    try {
-      // Assuming token is a JWT, decode it to get the email
-      const base64Url = token.split(".")[1]
-      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/")
-      const payload = JSON.parse(window.atob(base64))
-
-      // Extract username from email (remove domain)
-      if (payload.email) {
-        return payload.email.split("@")[0]
-      }
-
-      // Fallback to a simulated email
-      return "user@mjshealthhub"
-    } catch (error) {
-      // If token parsing fails, use a simulated email
-      return "user@mjshealthhub"
-    }
-  }
-
-  const userEmail = getUserDisplayName()
-  const userInitials = userEmail.substring(0, 2).toUpperCase()
+  const userRole = userData?.role || "patient"
+  const userEmail = userData?.email || "user@mjshealthhub.org"
+  const userInitials =
+    userData?.firstName && userData?.lastName
+      ? `${userData.firstName[0]}${userData.lastName[0]}`
+      : userEmail.substring(0, 2).toUpperCase()
+  const fullName = userData?.firstName && userData?.lastName ? `${userData.firstName} ${userData.lastName}` : userEmail
 
   useEffect(() => {
     setIsOpen(!isMobile)
@@ -79,56 +66,176 @@ export function DashboardSidebar() {
     }
   }
 
-  const navItems = [
+  // Define navigation items for different roles
+  const adminNavItems = [
     {
       title: "Dashboard",
       href: "/dashboard",
       icon: <LayoutDashboard className="h-5 w-5" />,
-      roles: ["admin", "doctor", "nurse"],
+    },
+    {
+      title: "User Management",
+      href: "/dashboard/users",
+      icon: <UserCog className="h-5 w-5" />,
     },
     {
       title: "Patients",
       href: "/dashboard/patients",
       icon: <Users className="h-5 w-5" />,
-      roles: ["admin", "doctor", "nurse"],
     },
     {
       title: "Telehealth",
       href: "/dashboard/telehealth",
       icon: <Video className="h-5 w-5" />,
-      roles: ["admin", "doctor", "nurse"],
     },
     {
       title: "Health Records",
       href: "/dashboard/records",
       icon: <FileText className="h-5 w-5" />,
-      roles: ["admin", "doctor", "nurse"],
     },
     {
       title: "ML Insights",
       href: "/dashboard/insights",
       icon: <Brain className="h-5 w-5" />,
-      roles: ["admin", "doctor"],
     },
     {
       title: "Analytics",
       href: "/dashboard/analytics",
       icon: <BarChart3 className="h-5 w-5" />,
-      roles: ["admin"],
     },
     {
       title: "Notifications",
       href: "/dashboard/notifications",
       icon: <Bell className="h-5 w-5" />,
-      roles: ["admin", "doctor", "nurse"],
     },
     {
       title: "Settings",
       href: "/dashboard/settings",
       icon: <Settings className="h-5 w-5" />,
-      roles: ["admin", "doctor", "nurse"],
     },
   ]
+
+  const doctorNavItems = [
+    {
+      title: "Dashboard",
+      href: "/dashboard",
+      icon: <LayoutDashboard className="h-5 w-5" />,
+    },
+    {
+      title: "My Patients",
+      href: "/dashboard/patients",
+      icon: <Users className="h-5 w-5" />,
+    },
+    {
+      title: "Telehealth",
+      href: "/dashboard/telehealth",
+      icon: <Video className="h-5 w-5" />,
+    },
+    {
+      title: "Health Records",
+      href: "/dashboard/records",
+      icon: <FileText className="h-5 w-5" />,
+    },
+    {
+      title: "ML Insights",
+      href: "/dashboard/insights",
+      icon: <Brain className="h-5 w-5" />,
+    },
+    {
+      title: "Notifications",
+      href: "/dashboard/notifications",
+      icon: <Bell className="h-5 w-5" />,
+      badge: 3,
+    },
+    {
+      title: "Settings",
+      href: "/dashboard/settings",
+      icon: <Settings className="h-5 w-5" />,
+    },
+  ]
+
+  const nurseNavItems = [
+    {
+      title: "Dashboard",
+      href: "/dashboard",
+      icon: <LayoutDashboard className="h-5 w-5" />,
+    },
+    {
+      title: "Patients",
+      href: "/dashboard/patients",
+      icon: <Users className="h-5 w-5" />,
+    },
+    {
+      title: "Telehealth",
+      href: "/dashboard/telehealth",
+      icon: <Video className="h-5 w-5" />,
+    },
+    {
+      title: "Health Records",
+      href: "/dashboard/records",
+      icon: <FileText className="h-5 w-5" />,
+    },
+    {
+      title: "Notifications",
+      href: "/dashboard/notifications",
+      icon: <Bell className="h-5 w-5" />,
+    },
+    {
+      title: "Settings",
+      href: "/dashboard/settings",
+      icon: <Settings className="h-5 w-5" />,
+    },
+  ]
+
+  const patientNavItems = [
+    {
+      title: "Dashboard",
+      href: "/dashboard",
+      icon: <LayoutDashboard className="h-5 w-5" />,
+    },
+    {
+      title: "My Health Records",
+      href: "/dashboard/records",
+      icon: <FileText className="h-5 w-5" />,
+    },
+    {
+      title: "Appointments",
+      href: "/dashboard/appointments",
+      icon: <CalendarClock className="h-5 w-5" />,
+    },
+    {
+      title: "Telehealth",
+      href: "/dashboard/telehealth",
+      icon: <Video className="h-5 w-5" />,
+    },
+    {
+      title: "Prescriptions",
+      href: "/dashboard/prescriptions",
+      icon: <Clipboard className="h-5 w-5" />,
+    },
+    {
+      title: "My Doctors",
+      href: "/dashboard/doctors",
+      icon: <Stethoscope className="h-5 w-5" />,
+    },
+    {
+      title: "Notifications",
+      href: "/dashboard/notifications",
+      icon: <Bell className="h-5 w-5" />,
+      badge: 2,
+    },
+    {
+      title: "Settings",
+      href: "/dashboard/settings",
+      icon: <Settings className="h-5 w-5" />,
+    },
+  ]
+
+  // Select navigation items based on user role
+  let navItems = patientNavItems
+  if (userRole === "admin") navItems = adminNavItems
+  else if (userRole === "doctor") navItems = doctorNavItems
+  else if (userRole === "nurse") navItems = nurseNavItems
 
   return (
     <>
@@ -162,8 +269,11 @@ export function DashboardSidebar() {
                 <AvatarFallback>{userInitials}</AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-medium">{userEmail}</p>
-                <p className="text-xs text-muted-foreground">Healthcare Provider</p>
+                <p className="font-medium">{fullName}</p>
+                <div className="flex items-center gap-1">
+                  <p className="text-xs text-muted-foreground capitalize">{userRole}</p>
+                  {userData?.specialty && <p className="text-xs text-muted-foreground">• {userData.specialty}</p>}
+                </div>
               </div>
             </div>
           </div>
@@ -171,21 +281,22 @@ export function DashboardSidebar() {
           {/* Navigation */}
           <ScrollArea className="flex-1 px-3 py-4">
             <nav className="flex flex-col gap-1">
-              {navItems
-                .filter((item) => !userRole || item.roles.includes(userRole))
-                .map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={closeSidebarOnMobile}
-                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                      pathname === item.href ? "bg-emerald-50 text-emerald-700" : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={closeSidebarOnMobile}
+                  className={`flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                    pathname === item.href ? "bg-emerald-50 text-emerald-700" : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
                     {item.icon}
                     {item.title}
-                  </Link>
-                ))}
+                  </div>
+                  {item.badge && <Badge className="bg-red-500 hover:bg-red-600">{item.badge}</Badge>}
+                </Link>
+              ))}
             </nav>
           </ScrollArea>
 

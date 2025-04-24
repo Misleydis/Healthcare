@@ -24,7 +24,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/components/ui/use-toast"
 import { Search, Plus, Download, Upload, Edit, Trash2, Eye, Calendar } from "lucide-react"
 import { format } from "date-fns"
-import { useHealthRecordStore } from "@/lib"
 
 // Generate random patient records
 const generatePatientRecords = (count = 10) => {
@@ -100,10 +99,8 @@ const generatePatientRecords = (count = 10) => {
 }
 
 export default function HealthRecordsPage() {
-  // Remove these lines:
-  // const [records, setRecords] = useState<any[]>([])
-  // const [loading, setLoading] = useState(true)
-
+  const [records, setRecords] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedRecord, setSelectedRecord] = useState<any>(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
@@ -120,23 +117,15 @@ export default function HealthRecordsPage() {
 
   const { toast } = useToast()
 
-  // Add this inside the component:
-  const { records, loading, createRecord, updateRecord, deleteRecord, fetchRecords } = useHealthRecordStore()
-
-  // Use useEffect to fetch records when the component mounts
   useEffect(() => {
-    fetchRecords()
-  }, [fetchRecords])
+    // Simulate API call
+    const timer = setTimeout(() => {
+      setRecords(generatePatientRecords(30))
+      setLoading(false)
+    }, 1500)
 
-  // useEffect(() => {
-  //   // Simulate API call
-  //   const timer = setTimeout(() => {
-  //     setRecords(generatePatientRecords(30))
-  //     setLoading(false)
-  //   }, 1500)
-
-  //   return () => clearTimeout(timer)
-  // }, [])
+    return () => clearTimeout(timer)
+  }, [])
 
   // Filter records based on search term
   const filteredRecords = records.filter((record) => {
@@ -164,44 +153,45 @@ export default function HealthRecordsPage() {
     setIsDeleteDialogOpen(true)
   }
 
-  // Update the confirmDelete function to use deleteRecord from the store
-  const confirmDelete = async () => {
-    if (selectedRecord) {
-      const success = await deleteRecord(selectedRecord.id)
-      if (success) {
-        setIsDeleteDialogOpen(false)
-        toast({
-          title: "Record deleted",
-          description: `Record for ${selectedRecord.patientName} has been deleted.`,
-        })
-      }
-    }
+  const confirmDelete = () => {
+    // Simulate delete operation
+    setRecords(records.filter((r) => r.id !== selectedRecord.id))
+    setIsDeleteDialogOpen(false)
+
+    toast({
+      title: "Record deleted",
+      description: `Record for ${selectedRecord.patientName} has been deleted.`,
+    })
   }
 
-  // Update the saveEdit function to use updateRecord from the store
-  const saveEdit = async () => {
-    if (selectedRecord) {
-      const success = await updateRecord(selectedRecord.id, { notes: editedNotes })
-      if (success) {
-        setIsEditDialogOpen(false)
-        toast({
-          title: "Record updated",
-          description: `Record for ${selectedRecord.patientName} has been updated.`,
-        })
-      }
-    }
+  const saveEdit = () => {
+    // Simulate update operation
+    setRecords(records.map((r) => (r.id === selectedRecord.id ? { ...r, notes: editedNotes } : r)))
+    setIsEditDialogOpen(false)
+
+    toast({
+      title: "Record updated",
+      description: `Record for ${selectedRecord.patientName} has been updated.`,
+    })
   }
 
   const handleAddRecord = () => {
     // Simulate add operation
     const newRecord = {
+      id: records.length + 1,
+      patientName: "New Patient",
       patientId: newRecordData.patientId,
       recordType: newRecordData.recordType,
       diagnosis: newRecordData.diagnosis,
+      doctor: "Current User",
+      date: new Date(),
+      formattedDate: format(new Date(), "MMM d, yyyy"),
       notes: newRecordData.notes,
+      status: "Complete",
+      initials: "NP",
     }
 
-    createRecord(newRecord)
+    setRecords([newRecord, ...records])
     setIsAddDialogOpen(false)
 
     // Reset form

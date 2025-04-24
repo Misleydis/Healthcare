@@ -28,7 +28,6 @@ import {
 import { Search, Plus, MoreHorizontal, FileText, Video, Brain, Filter } from "lucide-react"
 import Link from "next/link"
 import { Skeleton } from "@/components/ui/skeleton"
-import { usePatientStore } from "@/lib"
 
 // Generate random patient data
 const generatePatients = (count = 10) => {
@@ -101,20 +100,41 @@ const generatePatients = (count = 10) => {
 }
 
 export default function PatientsPage() {
+  const [patients, setPatients] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [activeTab, setActiveTab] = useState("all")
 
-  const { patients, loading, totalPages, fetchPatients } = usePatientStore()
-
-  const patientsPerPage = 10
-
   useEffect(() => {
-    fetchPatients(currentPage, patientsPerPage, searchTerm, activeTab === "all" ? "" : activeTab)
-  }, [fetchPatients, currentPage, patientsPerPage, searchTerm, activeTab])
+    // Simulate API call
+    const timer = setTimeout(() => {
+      setPatients(generatePatients(50))
+      setLoading(false)
+    }, 1500)
+
+    return () => clearTimeout(timer)
+  }, [])
 
   // Filter patients based on search term and active tab
-  const filteredPatients = patients
+  const filteredPatients = patients.filter((patient) => {
+    const matchesSearch =
+      patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.condition.toLowerCase().includes(searchTerm.toLowerCase())
+
+    if (activeTab === "all") return matchesSearch
+    if (activeTab === "active") return matchesSearch && patient.status === "Active"
+    if (activeTab === "inactive") return matchesSearch && patient.status === "Inactive"
+    if (activeTab === "pending") return matchesSearch && patient.status === "Pending"
+
+    return matchesSearch
+  })
+
+  // Pagination
+  const patientsPerPage = 10
+  const totalPages = Math.ceil(filteredPatients.length / patientsPerPage)
+  const paginatedPatients = filteredPatients.slice((currentPage - 1) * patientsPerPage, currentPage * patientsPerPage)
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -198,14 +218,14 @@ export default function PatientsPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {patients.length === 0 ? (
+                          {paginatedPatients.length === 0 ? (
                             <TableRow>
                               <TableCell colSpan={7} className="h-24 text-center">
                                 No patients found.
                               </TableCell>
                             </TableRow>
                           ) : (
-                            patients.map((patient) => (
+                            paginatedPatients.map((patient) => (
                               <TableRow key={patient.id}>
                                 <TableCell className="font-medium">
                                   <div className="flex items-center gap-3">
@@ -306,15 +326,7 @@ export default function PatientsPage() {
                             return (
                               <PaginationItem key={i}>
                                 <PaginationLink
-                                  onClick={() => {
-                                    setCurrentPage(pageNumber)
-                                    fetchPatients(
-                                      pageNumber,
-                                      patientsPerPage,
-                                      searchTerm,
-                                      activeTab === "all" ? "" : activeTab,
-                                    )
-                                  }}
+                                  onClick={() => setCurrentPage(pageNumber)}
                                   isActive={currentPage === pageNumber}
                                 >
                                   {pageNumber}
@@ -325,15 +337,7 @@ export default function PatientsPage() {
 
                           <PaginationItem>
                             <PaginationNext
-                              onClick={() => {
-                                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                                fetchPatients(
-                                  currentPage + 1,
-                                  patientsPerPage,
-                                  searchTerm,
-                                  activeTab === "all" ? "" : activeTab,
-                                )
-                              }}
+                              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                               disabled={currentPage === totalPages}
                             />
                           </PaginationItem>

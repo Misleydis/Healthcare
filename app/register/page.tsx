@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Activity, AlertCircle, Loader2 } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import useAuthStore from "@/lib/auth-store"
 
 const formSchema = z
@@ -25,6 +26,17 @@ const formSchema = z
     confirmPassword: z.string().min(6, {
       message: "Password must be at least 6 characters.",
     }),
+    firstName: z.string().min(1, {
+      message: "First name is required.",
+    }),
+    lastName: z.string().min(1, {
+      message: "Last name is required.",
+    }),
+    role: z.enum(["admin", "doctor", "nurse", "patient"], {
+      required_error: "Please select a role.",
+    }),
+    specialty: z.string().optional(),
+    phoneNumber: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -42,12 +54,29 @@ export default function RegisterPage() {
       email: "",
       password: "",
       confirmPassword: "",
+      firstName: "",
+      lastName: "",
+      role: "patient",
+      specialty: "",
+      phoneNumber: "",
     },
   })
 
+  const watchRole = form.watch("role")
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setAuthError(null)
-    const success = await register(values.email, values.password)
+    const { email, password, firstName, lastName, role, specialty, phoneNumber } = values
+    const success = await register({
+      email,
+      password,
+      firstName,
+      lastName,
+      role,
+      specialty,
+      phoneNumber,
+    })
+
     if (success) {
       router.push("/dashboard")
     }
@@ -77,6 +106,36 @@ export default function RegisterPage() {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your first name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your last name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
                 name="email"
@@ -85,6 +144,60 @@ export default function RegisterPage() {
                     <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input placeholder="Enter your email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="patient">Patient</SelectItem>
+                        <SelectItem value="doctor">Doctor</SelectItem>
+                        <SelectItem value="nurse">Nurse</SelectItem>
+                        <SelectItem value="admin">Administrator</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {(watchRole === "doctor" || watchRole === "nurse") && (
+                <FormField
+                  control={form.control}
+                  name="specialty"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Specialty</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your specialty" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              <FormField
+                control={form.control}
+                name="phoneNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your phone number" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -11,64 +11,71 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Bell, Search } from "lucide-react"
+import { Bell, Search, User, Settings, HelpCircle, LogOut } from "lucide-react"
 import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { useAuthStore, useNotificationStore } from "@/lib"
+import useAuthStore from "@/lib/auth-store"
 
 export function DashboardHeader() {
-  // Replace the useState for notifications with our notification store
-  // Remove this line:
-  // const [notifications, setNotifications] = useState([...]);
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      title: "New patient registration",
+      description: "Tendai Moyo has registered as a new patient",
+      time: "10 minutes ago",
+      read: false,
+    },
+    {
+      id: 2,
+      title: "Telehealth session reminder",
+      description: "Upcoming session with Chipo Ncube in 30 minutes",
+      time: "30 minutes ago",
+      read: false,
+    },
+    {
+      id: 3,
+      title: "ML insight alert",
+      description: "Potential malaria outbreak detected in Bulawayo region",
+      time: "2 hours ago",
+      read: true,
+    },
+  ])
 
-  // Add this inside the component:
-  const { notifications, unreadCount, fetchNotifications, markAsRead, markAllAsRead } = useNotificationStore()
+  const { logout, userData } = useAuthStore()
 
-  // Use useEffect to fetch notifications when the component mounts
-  useEffect(() => {
-    fetchNotifications()
-  }, [fetchNotifications])
+  const userEmail = userData?.email || "user@mjshealthhub.org"
+  const userInitials =
+    userData?.firstName && userData?.lastName
+      ? `${userData.firstName[0]}${userData.lastName[0]}`
+      : userEmail.substring(0, 2).toUpperCase()
+  const fullName = userData?.firstName && userData?.lastName ? `${userData.firstName} ${userData.lastName}` : userEmail
+  const userRole = userData?.role || "patient"
 
-  const { logout, token } = useAuthStore()
+  const unreadCount = notifications.filter((n) => !n.read).length
 
-  // Extract username from token or use a default
-  const getUserDisplayName = () => {
-    if (!token) return "User"
+  const markAsRead = (id: number) => {
+    setNotifications(notifications.map((n) => (n.id === id ? { ...n, read: true } : n)))
+  }
 
-    try {
-      // Assuming token is a JWT, decode it to get the email
-      const base64Url = token.split(".")[1]
-      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/")
-      const payload = JSON.parse(window.atob(base64))
+  const markAllAsRead = () => {
+    setNotifications(notifications.map((n) => ({ ...n, read: true })))
+  }
 
-      // Extract username from email (remove domain)
-      if (payload.email) {
-        return payload.email.split("@")[0]
-      }
-
-      // Fallback to a simulated email
-      return "user@mjshealthhub"
-    } catch (error) {
-      // If token parsing fails, use a simulated email
-      return "user@mjshealthhub"
+  // Get placeholder text based on user role
+  const getSearchPlaceholder = () => {
+    switch (userRole) {
+      case "admin":
+        return "Search users, patients, records..."
+      case "doctor":
+        return "Search patients, appointments, records..."
+      case "nurse":
+        return "Search patients and records..."
+      case "patient":
+        return "Search appointments and records..."
+      default:
+        return "Search..."
     }
-  }
-
-  const userEmail = getUserDisplayName()
-  const userInitials = userEmail.substring(0, 2).toUpperCase()
-
-  // Update the unreadCount variable to use the one from the store
-  // const unreadCount = notifications.filter((n) => !n.read).length
-
-  // Replace the markAsRead function with:
-  const handleMarkAsRead = (id) => {
-    markAsRead(id)
-  }
-
-  // Replace the markAllAsRead function with:
-  const handleMarkAllAsRead = () => {
-    markAllAsRead()
   }
 
   return (
@@ -79,7 +86,7 @@ export function DashboardHeader() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search patients, records..."
+            placeholder={getSearchPlaceholder()}
             className="w-full rounded-full bg-muted pl-8 md:w-[300px] lg:w-[400px]"
           />
         </div>
@@ -100,7 +107,7 @@ export function DashboardHeader() {
               <DropdownMenuLabel className="flex items-center justify-between">
                 <span>Notifications</span>
                 {unreadCount > 0 && (
-                  <Button variant="ghost" size="sm" onClick={handleMarkAllAsRead} className="h-auto text-xs">
+                  <Button variant="ghost" size="sm" onClick={markAllAsRead} className="h-auto text-xs">
                     Mark all as read
                   </Button>
                 )}
@@ -111,9 +118,9 @@ export function DashboardHeader() {
               ) : (
                 notifications.map((notification) => (
                   <DropdownMenuItem
-                    key={notification._id}
+                    key={notification.id}
                     className="cursor-pointer p-4"
-                    onClick={() => handleMarkAsRead(notification._id)}
+                    onClick={() => markAsRead(notification.id)}
                   >
                     <div className="flex items-start gap-2">
                       <div className="flex-1 space-y-1">
@@ -128,6 +135,12 @@ export function DashboardHeader() {
                   </DropdownMenuItem>
                 ))
               )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/notifications" className="cursor-pointer justify-center">
+                  View all notifications
+                </Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -143,22 +156,35 @@ export function DashboardHeader() {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{userEmail}</p>
-                  <p className="text-xs leading-none text-muted-foreground">{userEmail}@mjshealthhub</p>
+                  <p className="text-sm font-medium leading-none">{fullName}</p>
+                  <p className="text-xs leading-none text-muted-foreground">{userEmail}</p>
+                  <p className="text-xs leading-none text-muted-foreground capitalize">{userRole}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/dashboard/profile">Profile</Link>
+                <Link href="/dashboard/profile">
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/dashboard/settings">Settings</Link>
+                <Link href="/dashboard/settings">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/help">Help</Link>
+                <Link href="/help">
+                  <HelpCircle className="mr-2 h-4 w-4" />
+                  Help
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout}>Log out</DropdownMenuItem>
+              <DropdownMenuItem onClick={logout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Log out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
