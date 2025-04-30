@@ -172,6 +172,18 @@ export default function HealthRecordsPage() {
   const [shareEmail, setShareEmail] = useState("")
   const [shareLoading, setShareLoading] = useState(false)
 
+  // Add state for managing medical history
+  const [medicalHistory, setMedicalHistory] = useState<any[]>([]);
+  const [isAddHistoryDialogOpen, setIsAddHistoryDialogOpen] = useState(false);
+  const [isEditHistoryDialogOpen, setIsEditHistoryDialogOpen] = useState(false);
+  const [isDeleteHistoryDialogOpen, setIsDeleteHistoryDialogOpen] = useState(false);
+  const [selectedHistory, setSelectedHistory] = useState<any>(null);
+  const [newHistoryData, setNewHistoryData] = useState({
+    condition: "",
+    treatment: "",
+    notes: "",
+  });
+
   const { toast } = useToast()
 
   useEffect(() => {
@@ -302,6 +314,32 @@ export default function HealthRecordsPage() {
       description: "The health record has been downloaded as PDF.",
     })
   }
+
+  // Function to handle adding new medical history
+  const handleAddHistory = () => {
+    const newHistory = {
+      id: medicalHistory.length + 1,
+      ...newHistoryData,
+    };
+    setMedicalHistory([newHistory, ...medicalHistory]);
+    setIsAddHistoryDialogOpen(false);
+    setNewHistoryData({ condition: "", treatment: "", notes: "" });
+    toast({ title: "History added", description: "New medical history has been added." });
+  };
+
+  // Function to handle editing medical history
+  const handleEditHistory = () => {
+    setMedicalHistory(medicalHistory.map((h) => (h.id === selectedHistory.id ? { ...h, ...newHistoryData } : h)));
+    setIsEditHistoryDialogOpen(false);
+    toast({ title: "History updated", description: "Medical history has been updated." });
+  };
+
+  // Function to handle deleting medical history
+  const confirmDeleteHistory = () => {
+    setMedicalHistory(medicalHistory.filter((h) => h.id !== selectedHistory.id));
+    setIsDeleteHistoryDialogOpen(false);
+    toast({ title: "History deleted", description: "Medical history has been deleted." });
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -759,6 +797,77 @@ export default function HealthRecordsPage() {
               </Button>
             </DialogFooter>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add buttons to trigger modals */}
+      <Button onClick={() => setIsAddHistoryDialogOpen(true)}>Add Medical History</Button>
+
+      {/* Add modals for managing medical history */}
+      <Dialog open={isAddHistoryDialogOpen} onOpenChange={setIsAddHistoryDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Add Medical History</DialogTitle>
+            <DialogDescription>Enter details of your medical history</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="condition">Condition</Label>
+              <Input id="condition" value={newHistoryData.condition} onChange={(e) => setNewHistoryData({ ...newHistoryData, condition: e.target.value })} placeholder="Enter condition" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="treatment">Treatment</Label>
+              <Input id="treatment" value={newHistoryData.treatment} onChange={(e) => setNewHistoryData({ ...newHistoryData, treatment: e.target.value })} placeholder="Enter treatment" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea id="notes" value={newHistoryData.notes} onChange={(e) => setNewHistoryData({ ...newHistoryData, notes: e.target.value })} placeholder="Enter notes" rows={4} />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAddHistoryDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleAddHistory}>Add History</Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditHistoryDialogOpen} onOpenChange={setIsEditHistoryDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Medical History</DialogTitle>
+            <DialogDescription>Edit details of your medical history</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="editCondition">Condition</Label>
+              <Input id="editCondition" value={newHistoryData.condition} onChange={(e) => setNewHistoryData({ ...newHistoryData, condition: e.target.value })} placeholder="Enter condition" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editTreatment">Treatment</Label>
+              <Input id="editTreatment" value={newHistoryData.treatment} onChange={(e) => setNewHistoryData({ ...newHistoryData, treatment: e.target.value })} placeholder="Enter treatment" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editNotes">Notes</Label>
+              <Textarea id="editNotes" value={newHistoryData.notes} onChange={(e) => setNewHistoryData({ ...newHistoryData, notes: e.target.value })} placeholder="Enter notes" rows={4} />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditHistoryDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleEditHistory}>Save Changes</Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteHistoryDialogOpen} onOpenChange={setIsDeleteHistoryDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>Are you sure you want to delete this medical history? This action cannot be undone.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteHistoryDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDeleteHistory}>Delete History</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
