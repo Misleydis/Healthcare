@@ -870,6 +870,58 @@ export default function HealthRecordsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Add a table to display medical history entries */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle>Medical History</CardTitle>
+          <CardDescription>Manage your medical history records</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {medicalHistory.length === 0 ? (
+            <div className="text-center text-muted-foreground">No medical history records found.</div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Condition</TableHead>
+                    <TableHead>Treatment</TableHead>
+                    <TableHead>Notes</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {medicalHistory.map((history) => (
+                    <TableRow key={history.id}>
+                      <TableCell>{history.condition}</TableCell>
+                      <TableCell>{history.treatment}</TableCell>
+                      <TableCell>{history.notes}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => {
+                            setSelectedHistory(history);
+                            setNewHistoryData(history);
+                            setIsEditHistoryDialogOpen(true);
+                          }}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => {
+                            setSelectedHistory(history);
+                            setIsDeleteHistoryDialogOpen(true);
+                          }}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
