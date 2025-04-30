@@ -1,28 +1,29 @@
 "use client"
 
-import type React from "react"
+import type React from 'react';
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
 import {
   BarChart,
+  Bell,
+  Brain,
   Calendar,
   FileText,
   Home,
   Pill,
   Settings,
+  Stethoscope,
+  User,
   Users,
   Video,
-  Bell,
-  User,
-  Stethoscope,
-  Brain,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import useAuthStore from "@/lib/auth-store"
-import type { UserRole } from "@/lib/auth-store"
+} from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import type { UserRole } from '@/lib/auth-store';
+import useAuthStore from '@/lib/auth-store';
+import { cn } from '@/lib/utils';
 
 interface SidebarItem {
   title: string
@@ -114,6 +115,12 @@ export function DashboardSidebar() {
       href: "/dashboard/profile",
       icon: User,
       roles: ["admin", "doctor", "nurse", "patient"],
+    },
+    {
+      title: "Chatbot",
+      href: "/dashboard/chatbot",
+      icon: Brain,
+      roles: ["patient"],
     },
   ]
 
