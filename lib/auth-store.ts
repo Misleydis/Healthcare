@@ -39,74 +39,132 @@ const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       loading: false,
       error: null,
+
       register: async (credentials) => {
         set({ loading: true, error: null })
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 2000))
-        if (credentials.email === "existing@example.com") {
-          set({ loading: false, error: "Email already exists" })
+
+        try {
+          const response = await fetch('https://auth-backend-qyna.onrender.com/api/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(credentials),
+          })
+
+          const data = await response.json()
+
+          if (!response.ok) {
+            set({ loading: false, error: data.message || "Registration failed" })
+            console.error("Registration failed:", data.message)
+            return false
+          }
+
+          const newUser: User = {
+            id: data.userId,
+            name: `${credentials.firstName} ${credentials.lastName}`,
+            email: credentials.email,
+            role: data.role,
+            specialty: credentials.specialty,
+            phoneNumber: credentials.phoneNumber,
+            bio: "",
+            createdAt: new Date().toISOString(),
+            address: "",
+            firstName: credentials.firstName,
+            lastName: credentials.lastName,
+          }
+
+          set({
+            token: data.token,
+            userData: newUser,
+            isAuthenticated: true,
+            loading: false,
+          })
+
+          console.log("Registration successful for user:", credentials.email)
+          return true
+
+        } catch (error) {
+          console.error("Registration error:", error)
+          set({ loading: false, error: "Registration failed" })
           return false
         }
-        const newUser: User = {
-          id: Math.random().toString(),
-          name: `${credentials.firstName} ${credentials.lastName}`,
-          email: credentials.email,
-          role: credentials.role,
-          specialty: credentials.specialty,
-          phoneNumber: credentials.phoneNumber,
-          bio: "",
-          createdAt: new Date().toISOString(),
-          address: "",
-          firstName: credentials.firstName,
-          lastName: credentials.lastName,
-        }
-        set({
-          token: "fake-token",
-          userData: newUser,
-          isAuthenticated: true,
-          loading: false,
-        })
-        return true
       },
+
       login: async (email, password) => {
         set({ loading: true, error: null })
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 2000))
-        if (email === "wrong@example.com" || password !== "password123") {
-          set({ loading: false, error: "Invalid credentials" })
+
+        try {
+          const response = await fetch('https://auth-backend-qyna.onrender.com/api/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+          })
+
+          const data = await response.json()
+
+          if (!response.ok) {
+            console.error("Login failed:", data.message)
+            set({ loading: false, error: data.message || "Invalid credentials" })
+            return false
+          }
+
+          set({
+            token: data.token,
+            userData: data.user,
+            isAuthenticated: true,
+            loading: false,
+          })
+
+          console.log("Login successful for user:", email)
+          return true
+
+        } catch (error) {
+          console.error("Login error:", error)
+          set({ loading: false, error: "Login failed" })
           return false
         }
-        const fakeUser: User = {
-          id: Math.random().toString(),
-          name: "Test User",
-          email: email,
-          role: "patient",
-          specialty: "",
-          phoneNumber: "",
-          address: "",
-          createdAt: new Date().toISOString(),
-          bio: "",
-          firstName: "Test",
-          lastName: "User",
-        }
-        set({
-          token: "fake-token",
-          userData: fakeUser,
-          isAuthenticated: true,
-          loading: false,
-        })
-        return true
       },
+
       logout: () => set({ token: null, userData: null, isAuthenticated: false }),
+
       updateUserData: async (data) => {
         set({ loading: true, error: null })
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        set((state) => ({
-          userData: state.userData ? { ...state.userData, ...data } : null,
-          loading: false,
-        }))
-        return true
+
+        try {
+          const token = get().token
+          const response = await fetch('https://auth-backend-qyna.onrender.com/api/users/me', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(data),
+          })
+
+          if (!response.ok) {
+            const errorData = await response.json()
+            set({ loading: false, error: errorData.message || "Failed to update user data" })
+            return false
+          }
+
+          const updatedUser = await response.json()
+
+          set((state) => ({
+            userData: state.userData ? { ...state.userData, ...updatedUser } : null,
+            loading: false,
+          }))
+
+          console.log("User data updated successfully")
+          return true
+
+        } catch (error) {
+          console.error("Update user data error:", error)
+          set({ loading: false, error: "Failed to update user data" })
+          return false
+        }
       },
     }),
     {
