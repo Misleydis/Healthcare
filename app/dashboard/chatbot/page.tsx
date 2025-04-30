@@ -84,44 +84,81 @@ export default function ChatbotPage() {
     }
   ];
 
+  const normalizeText = (text: string) => {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s]/g, '')
+      .split(/\s+/)
+      .map(word => {
+        const synonyms: Record<string, string> = {
+          fever: 'temperature',
+          temperature: 'temperature',
+          sore: 'pain',
+          hurt: 'pain',
+          vomiting: 'vomit',
+          nauseated: 'nausea',
+          tired: 'fatigue',
+          exhausted: 'fatigue',
+          anxious: 'anxiety',
+          breathless: 'breath',
+        };
+        return synonyms[word] || word;
+      });
+  };
+
+  const detectEmotion = (text: string): 'neutral' | 'concerned' => {
+    const concernWords = ['worried', 'scared', 'panic', 'urgent', 'bad', 'worse', 'emergency'];
+    const normalized = normalizeText(text);
+    return normalized.some(word => concernWords.includes(word)) ? 'concerned' : 'neutral';
+  };
+
+  const getSymptomMatches = (inputWords: string[], symptom: Symptom) => {
+    let score = 0;
+    for (const word of inputWords) {
+      for (const keyword of symptom.keywords) {
+        if (word.includes(keyword) || keyword.includes(word)) {
+          score++;
+        }
+      }
+    }
+    return score;
+  };
+
   const getBotResponse = (userMessage: string): string => {
-    const lowerMessage = userMessage.toLowerCase();
-    const words = lowerMessage.split(/\s+/);
-    
-    setSymptomHistory(prev => [...prev, lowerMessage]);
-    
-    const newContext = { ...symptomContext };
-    words.forEach(word => {
-      newContext[word] = (newContext[word] || 0) + 1;
+    const inputWords = normalizeText(userMessage);
+    setSymptomHistory(prev => [...prev, userMessage.toLowerCase()]);
+
+    const contextUpdate = { ...symptomContext };
+    inputWords.forEach(word => {
+      contextUpdate[word] = (contextUpdate[word] || 0) + 1;
     });
-    setSymptomContext(newContext);
+    setSymptomContext(contextUpdate);
 
-    const matchingCategories = symptoms.filter(symptom => {
-      const matches = symptom.keywords.some(keyword =>
-        words.some(word =>
-          word.includes(keyword) ||
-          keyword.includes(word) ||
-          (word.length > 3 && keyword.length > 3 &&
-           (word.startsWith(keyword) || keyword.startsWith(word)))
-        )
-      );
-      
-      return matches && (symptom.severity === 'high' || 
-        (symptom.severity === 'medium' && !symptoms.some(s => s.severity === 'high' && s.keywords.some(k => words.some(w => w.includes(k))))));
-    });
+    const contextWords = Object.keys(contextUpdate);
 
-    if (matchingCategories.length > 0) {
-      const combinedResponse = matchingCategories
-        .map(symptom => {
-          const conditions = symptom.relatedConditions.join(', ');
-          return `For ${symptom.category} symptoms (${symptom.severity} severity):\n${symptom.response}\n\nRelated conditions to consider: ${conditions}`;
-        })
-        .join('\n\n');
+    const matchedSymptoms = symptoms
+      .map(symptom => ({
+        ...symptom,
+        matchScore: getSymptomMatches(contextWords, symptom)
+      }))
+      .filter(s => s.matchScore > 0)
+      .sort((a, b) => b.matchScore - a.matchScore || (b.severity === 'high' ? 1 : -1));
 
-      return `I understand you're experiencing multiple symptoms. Here's my comprehensive advice:\n\n${combinedResponse}\n\nRemember to monitor your symptoms and seek immediate medical attention if they worsen or if you experience any severe symptoms.`;
+    if (matchedSymptoms.length === 0) {
+      return '🤔 I couldn’t quite catch any specific symptoms. Could you try rephrasing or giving more detail? For example: "I have a sore throat and feel tired."';
     }
 
-    return 'I understand your concern. Could you please describe your symptoms in more detail? This will help me provide more specific and helpful advice.';
+    const primary = matchedSymptoms.slice(0, 3);
+    const compiledResponse = primary.map(symptom =>
+      `📌 *${symptom.category}* (${symptom.severity.toUpperCase()} severity)\n${symptom.response}\n*Possible related conditions:* ${symptom.relatedConditions.join(', ')}`
+    );
+
+    const emotion = detectEmotion(userMessage);
+    const reassurance = emotion === 'concerned'
+      ? "\n🙌 I'm here to help. You're not alone, and I’ll do my best to guide you."
+      : '';
+
+    return `🩺 Based on what you've shared so far:\n\n${compiledResponse.join('\n\n')}\n\n💡 If anything worsens or feels severe, please consult a healthcare professional immediately.${reassurance}`;
   };
 
   const handleSendMessage = () => {
@@ -178,6 +215,4 @@ export default function ChatbotPage() {
       </Card>
     </div>
   );
-}
-}
 }
