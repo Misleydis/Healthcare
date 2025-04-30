@@ -1,5 +1,6 @@
 "use client"
 import { useState } from 'react';
+
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -122,44 +123,45 @@ export default function ChatbotPage() {
     }
     return score;
   };
-
   const getBotResponse = (userMessage: string): string => {
     const inputWords = normalizeText(userMessage);
     setSymptomHistory(prev => [...prev, userMessage.toLowerCase()]);
-
+  
     const contextUpdate = { ...symptomContext };
     inputWords.forEach(word => {
       contextUpdate[word] = (contextUpdate[word] || 0) + 1;
     });
     setSymptomContext(contextUpdate);
-
+  
     const contextWords = Object.keys(contextUpdate);
-
+  
     const matchedSymptoms = symptoms
       .map(symptom => ({
         ...symptom,
-        matchScore: getSymptomMatches(contextWords, symptom)
+        matchScore: getSymptomMatches(contextWords, symptom),
       }))
       .filter(s => s.matchScore > 0)
       .sort((a, b) => b.matchScore - a.matchScore || (b.severity === 'high' ? 1 : -1));
-
+  
     if (matchedSymptoms.length === 0) {
       return '🤔 I couldn’t quite catch any specific symptoms. Could you try rephrasing or giving more detail? For example: "I have a sore throat and feel tired."';
     }
-
+  
     const primary = matchedSymptoms.slice(0, 3);
-    const compiledResponse = primary.map(symptom =>
-      `📌 *${symptom.category}* (${symptom.severity.toUpperCase()} severity)\n${symptom.response}\n*Possible related conditions:* ${symptom.relatedConditions.join(', ')}`
-    );
-
+    const compiledResponse = primary.map((symptom, index) => (
+      `📌 *${index + 1}. ${symptom.category} (Severity: ${symptom.severity.toUpperCase()})*\n` +
+      `${symptom.response}\n` +
+      `*Possible related conditions:* ${symptom.relatedConditions.join(', ')}\n`
+    ));
+  
     const emotion = detectEmotion(userMessage);
     const reassurance = emotion === 'concerned'
       ? "\n🙌 I'm here to help. You're not alone, and I’ll do my best to guide you."
       : '';
-
-    return `🩺 Based on what you've shared so far:\n\n${compiledResponse.join('\n\n')}\n\n💡 If anything worsens or feels severe, please consult a healthcare professional immediately.${reassurance}`;
+  
+    return `🩺 Based on what you've shared so far:\n\n${compiledResponse.join('\n')}\n\n💡 If anything worsens or feels severe, please consult a healthcare professional immediately.${reassurance}`;
   };
-
+  
   const handleSendMessage = () => {
     if (userInput.trim() === '') return;
 
