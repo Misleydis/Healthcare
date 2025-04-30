@@ -1,14 +1,39 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  useEffect,
+  useState,
+} from 'react';
+
+import { format } from 'date-fns';
+import {
+  Calendar,
+  Download,
+  Edit,
+  Eye,
+  FileText,
+  Plus,
+  Search,
+  Trash2,
+  Upload,
+} from 'lucide-react';
+
+import { DashboardHeader } from '@/components/dashboard-header';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -16,15 +41,34 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Skeleton } from "@/components/ui/skeleton"
-import { useToast } from "@/components/ui/use-toast"
-import { Search, Plus, Download, Upload, Edit, Trash2, Eye, Calendar, FileText } from "lucide-react"
-import { format } from "date-fns"
-import useAuthStore from "@/lib/auth-store"
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
+import useAuthStore from '@/lib/auth-store';
 
 // Generate random patient records
 const generatePatientRecords = (count = 10, isPatient = false, patientName = "") => {
@@ -140,14 +184,20 @@ export default function HealthRecordsPage() {
     return () => clearTimeout(timer)
   }, [isPatient, fullName])
 
-  // Filter records based on search term
+  // Filter records based on search term and patient ID if the user is a patient
   const filteredRecords = records.filter((record) => {
-    return (
+    const matchesSearchTerm =
       record.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.patientId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.diagnosis.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.recordType.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+      record.recordType.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // If the user is a patient, ensure they only see their own records
+    if (isPatient) {
+      return matchesSearchTerm && record.patientId === userData?.id;
+    }
+
+    return matchesSearchTerm;
   })
 
   const handleViewRecord = (record: any) => {
@@ -156,14 +206,18 @@ export default function HealthRecordsPage() {
   }
 
   const handleEditRecord = (record: any) => {
-    setSelectedRecord(record)
-    setEditedNotes(record.notes)
-    setIsEditDialogOpen(true)
+    if (isDoctor || isNurse || isAdmin) {
+      setSelectedRecord(record);
+      setEditedNotes(record.notes);
+      setIsEditDialogOpen(true);
+    }
   }
 
   const handleDeleteRecord = (record: any) => {
-    setSelectedRecord(record)
-    setIsDeleteDialogOpen(true)
+    if (isDoctor || isAdmin) {
+      setSelectedRecord(record);
+      setIsDeleteDialogOpen(true);
+    }
   }
 
   const confirmDelete = () => {
