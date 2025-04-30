@@ -1,18 +1,41 @@
 "use client"
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Activity, AlertCircle, Loader2 } from "lucide-react"
-import useAuthStore from "@/lib/auth-store"
+import { useState } from 'react';
+
+import {
+  Activity,
+  AlertCircle,
+  Loader2,
+} from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+import {
+  Alert,
+  AlertDescription,
+} from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import useAuthStore from '@/lib/auth-store';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 const formSchema = z.object({
   email: z.string().email({
@@ -27,12 +50,6 @@ export default function LoginPage() {
   const router = useRouter()
   const { login, loading, error } = useAuthStore()
   const [authError, setAuthError] = useState<string | null>(error)
-  const [demoAccounts] = useState([
-    { email: "admin@mjshealthhub.org", role: "Administrator" },
-    { email: "doctor@mjshealthhub.org", role: "Doctor" },
-    { email: "nurse@mjshealthhub.org", role: "Nurse" },
-    { email: "patient@mjshealthhub.org", role: "Patient" },
-  ])
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -45,17 +62,6 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setAuthError(null)
     const success = await login(values.email, values.password)
-    if (success) {
-      router.push("/dashboard")
-    }
-  }
-
-  const loginWithDemoAccount = async (email: string) => {
-    form.setValue("email", email)
-    form.setValue("password", "password123")
-
-    setAuthError(null)
-    const success = await login(email, "password123")
     if (success) {
       router.push("/dashboard")
     }
@@ -125,24 +131,6 @@ export default function LoginPage() {
               </Button>
             </form>
           </Form>
-
-          <div className="mt-6">
-            <p className="text-center text-sm font-medium text-muted-foreground mb-3">Or try a demo account</p>
-            <div className="grid grid-cols-2 gap-2">
-              {demoAccounts.map((account) => (
-                <Button
-                  key={account.email}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => loginWithDemoAccount(account.email)}
-                  disabled={loading}
-                  className="justify-start"
-                >
-                  <span className="truncate">{account.role}</span>
-                </Button>
-              ))}
-            </div>
-          </div>
         </CardContent>
         <CardFooter>
           <div className="text-center text-sm w-full">
