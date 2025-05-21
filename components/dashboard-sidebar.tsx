@@ -130,39 +130,31 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
   ]
 
   return (
-    <div className={cn("pb-12 border-r h-screen", className)}>
-      <div className="space-y-4 py-4">
-        <div className="px-3 py-2">
-          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">Health Portal</h2>
-          <div className="space-y-1">
-            <ScrollArea className="h-[calc(100vh-10rem)]">
-              <div className="space-y-1">
-                {routes.map((route) => {
-                  // Only show routes that are applicable to the user's role
-                  if (!userData || !route.roles.includes(userData.role)) {
-                    return null
-                  }
+    <div className="hidden border-r bg-muted/40 md:block md:w-64">
+      <ScrollArea className="h-full py-2">
+        <nav className="grid gap-1 px-2">
+          {routes.map((route) => {
+            // Only show routes that are applicable to the user's role
+            if (!userData || !route.roles.includes(userData.role)) {
+              return null
+            }
 
-                  return (
-                    <Button
-                      key={route.href}
-                      variant={route.active ? "secondary" : "ghost"}
-                      size="sm"
-                      className="w-full justify-start"
-                      asChild
-                    >
-                      <Link href={route.href}>
-                        <route.icon className="mr-2 h-4 w-4" />
-                        {route.label}
-                      </Link>
-                    </Button>
-                  )
-                })}
-              </div>
-            </ScrollArea>
-          </div>
-        </div>
-      </div>
+            return (
+              <Button
+                key={route.href}
+                variant={route.active ? "secondary" : "ghost"}
+                className={cn("flex h-10 items-center justify-start gap-2 px-4", route.active && "bg-muted")}
+                asChild
+              >
+                <Link href={route.href}>
+                  <route.icon className="h-5 w-5" />
+                  <span>{route.label}</span>
+                </Link>
+              </Button>
+            )
+          })}
+        </nav>
+      </ScrollArea>
     </div>
   )
 }

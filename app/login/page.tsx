@@ -1,41 +1,20 @@
 "use client"
 
-import { useState } from 'react';
+import { useState } from "react"
 
-import {
-  Activity,
-  AlertCircle,
-  Loader2,
-} from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import { Activity, AlertCircle, Loader2 } from "lucide-react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
 
-import {
-  Alert,
-  AlertDescription,
-} from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import useAuthStore from '@/lib/auth-store';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import useAuthStore from "@/lib/auth-store"
+import { zodResolver } from "@hookform/resolvers/zod"
 
 const formSchema = z.object({
   email: z.string().email({
