@@ -20,7 +20,7 @@ import {
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useAuthStore } from "@/lib/auth-store"
+import useAuthStore from "@/lib/auth-store"
 
 interface DashboardSidebarProps {
   className?: string
@@ -28,12 +28,12 @@ interface DashboardSidebarProps {
 
 export function DashboardSidebar({ className }: DashboardSidebarProps) {
   const pathname = usePathname()
-  const { user } = useAuthStore()
+  const { userData } = useAuthStore()
 
-  const isPatient = user?.role === "patient"
-  const isDoctor = user?.role === "doctor"
-  const isNurse = user?.role === "nurse"
-  const isAdmin = user?.role === "admin"
+  const isPatient = userData?.role === "patient"
+  const isDoctor = userData?.role === "doctor"
+  const isNurse = userData?.role === "nurse"
+  const isAdmin = userData?.role === "admin"
 
   const routes = [
     {
@@ -139,7 +139,7 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
               <div className="space-y-1">
                 {routes.map((route) => {
                   // Only show routes that are applicable to the user's role
-                  if (!user || !route.roles.includes(user.role)) {
+                  if (!userData || !route.roles.includes(userData.role)) {
                     return null
                   }
 
