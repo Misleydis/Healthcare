@@ -1,11 +1,11 @@
-import { create } from "zustand"
-import { persist } from "zustand/middleware"
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface User {
   id: string
   name: string
   email: string
-  role: "patient" | "doctor" | "admin" | "nurse"
+  role: "patient" | "doctor" | "nurse"
   specialty?: string
   phoneNumber?: string
   address?: string
@@ -15,7 +15,7 @@ interface User {
   lastName: string
 }
 
-type UserRole = "patient" | "doctor" | "admin" | "nurse"
+type UserRole = "patient" | "doctor" | "nurse"
 
 interface AuthState {
   token: string | null
@@ -173,5 +173,5 @@ const useAuthStore = create<AuthState>()(
   ),
 )
 
-export type { UserRole }
+export type { UserRole };
 export default useAuthStore
