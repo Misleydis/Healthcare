@@ -1,7 +1,7 @@
 "use client"
 
-import type React from "react"
-
+import { usePathname } from "next/navigation"
+import Link from "next/link"
 import {
   BarChart,
   Bell,
@@ -16,28 +16,17 @@ import {
   Users,
   Video,
 } from "lucide-react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import type { UserRole } from "@/lib/auth-store"
 import useAuthStore from "@/lib/auth-store"
-import { cn } from "@/lib/utils"
-
-interface SidebarItem {
-  title: string
-  href: string
-  icon: React.ComponentType<{ className?: string }>
-  roles: UserRole[]
-}
 
 export function DashboardSidebar() {
   const pathname = usePathname()
   const { userData } = useAuthStore()
   const userRole = userData?.role || "patient"
 
-  const sidebarItems: SidebarItem[] = [
+  const sidebarItems = [
     {
       title: "Dashboard",
       href: "/dashboard",
@@ -127,24 +116,29 @@ export function DashboardSidebar() {
   const filteredItems = sidebarItems.filter((item) => item.roles.includes(userRole))
 
   return (
-    <div className="hidden border-r bg-muted/40 md:block md:w-64">
-      <ScrollArea className="h-full py-2">
-        <nav className="grid gap-1 px-2">
-          {filteredItems.map((item) => (
-            <Button
-              key={item.href}
-              variant={pathname === item.href ? "secondary" : "ghost"}
-              className={cn("flex h-10 items-center justify-start gap-2 px-4", pathname === item.href && "bg-muted")}
-              asChild
-            >
-              <Link href={item.href}>
-                <item.icon className="h-5 w-5" />
-                <span>{item.title}</span>
-              </Link>
-            </Button>
-          ))}
-        </nav>
-      </ScrollArea>
+    <div className="border-r bg-background w-64">
+      <div className="py-4">
+        <div className="px-3 py-2">
+          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">Health Portal</h2>
+          <ScrollArea className="h-[calc(100vh-8rem)]">
+            <div className="space-y-1">
+              {filteredItems.map((item) => (
+                <Button
+                  key={item.href}
+                  variant={pathname === item.href ? "secondary" : "ghost"}
+                  className="w-full justify-start"
+                  asChild
+                >
+                  <Link href={item.href}>
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.title}
+                  </Link>
+                </Button>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+      </div>
     </div>
   )
 }
