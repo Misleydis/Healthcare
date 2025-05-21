@@ -24,75 +24,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Video, Clock, CalendarIcon, MapPin } from "lucide-react"
 import Link from "next/link"
-import { format, isSameDay, addDays, addHours, addMinutes, isAfter, isBefore } from "date-fns"
+import { format, isSameDay, isAfter, isBefore } from "date-fns"
 import useAuthStore from "@/lib/auth-store"
-
-// Generate appointments data
-const generateAppointments = (count = 10, isPatient = false, patientName = "") => {
-  const doctorNames = ["Dr. Mutasa", "Dr. Chigumba", "Dr. Ndlovu", "Dr. Makoni", "Dr. Zimuto"]
-  const appointmentTypes = ["Check-up", "Follow-up", "Consultation", "Vaccination", "Lab Test", "Prescription Renewal"]
-  const locations = ["Main Clinic", "Telehealth", "Rural Outpost", "Mobile Clinic", "Home Visit"]
-  const statuses = ["Scheduled", "Completed", "Cancelled", "Rescheduled"]
-
-  const now = new Date()
-  const appointments = []
-
-  // Past appointments
-  for (let i = 0; i < Math.floor(count / 3); i++) {
-    const appointmentDate = addDays(now, -Math.floor(Math.random() * 30) - 1)
-    appointments.push({
-      id: i + 1,
-      patientName: isPatient ? patientName : `Patient ${i + 1}`,
-      doctorName: doctorNames[Math.floor(Math.random() * doctorNames.length)],
-      type: appointmentTypes[Math.floor(Math.random() * appointmentTypes.length)],
-      date: appointmentDate,
-      formattedDate: format(appointmentDate, "MMMM d, yyyy"),
-      formattedTime: format(appointmentDate, "h:mm a"),
-      status: Math.random() > 0.2 ? "Completed" : "Cancelled",
-      location: locations[Math.floor(Math.random() * locations.length)],
-      notes: "Regular check-up appointment.",
-      duration: 30,
-    })
-  }
-
-  // Today's appointments
-  for (let i = 0; i < Math.floor(count / 3); i++) {
-    const appointmentDate = addHours(addMinutes(now, Math.floor(Math.random() * 300)), i)
-    appointments.push({
-      id: appointments.length + 1,
-      patientName: isPatient ? patientName : `Patient ${appointments.length + 1}`,
-      doctorName: doctorNames[Math.floor(Math.random() * doctorNames.length)],
-      type: appointmentTypes[Math.floor(Math.random() * appointmentTypes.length)],
-      date: appointmentDate,
-      formattedDate: format(appointmentDate, "MMMM d, yyyy"),
-      formattedTime: format(appointmentDate, "h:mm a"),
-      status: isAfter(appointmentDate, now) ? "Scheduled" : "Completed",
-      location: locations[Math.floor(Math.random() * locations.length)],
-      notes: "Follow-up appointment to discuss test results.",
-      duration: 30,
-    })
-  }
-
-  // Future appointments
-  for (let i = 0; i < Math.floor(count / 3); i++) {
-    const appointmentDate = addDays(now, Math.floor(Math.random() * 30) + 1)
-    appointments.push({
-      id: appointments.length + 1,
-      patientName: isPatient ? patientName : `Patient ${appointments.length + 1}`,
-      doctorName: doctorNames[Math.floor(Math.random() * doctorNames.length)],
-      type: appointmentTypes[Math.floor(Math.random() * appointmentTypes.length)],
-      date: appointmentDate,
-      formattedDate: format(appointmentDate, "MMMM d, yyyy"),
-      formattedTime: format(appointmentDate, "h:mm a"),
-      status: "Scheduled",
-      location: locations[Math.floor(Math.random() * locations.length)],
-      notes: "Initial consultation for new symptoms.",
-      duration: 30,
-    })
-  }
-
-  return appointments
-}
+import { useDataStore } from "@/lib/data-store"
 
 export default function AppointmentsPage() {
   const { userData } = useAuthStore()
@@ -102,8 +36,21 @@ export default function AppointmentsPage() {
   const isAdmin = userData?.role === "admin"
 
   const fullName = userData ? `${userData.firstName} ${userData.lastName}` : "User"
+  const userId = userData?.id || ""
 
-  const [appointments, setAppointments] = useState<any[]>([])
+  // Get appointments from data store
+  const { appointments, addAppointment, updateAppointment, deleteAppointment, doctors } = useDataStore()
+
+  // Filter appointments based on user role
+  const filteredAppointments = appointments.filter((appointment) => {
+    if (isPatient) {
+      return appointment.patientId === userId
+    } else if (isDoctor) {
+      return appointment.doctorId === userId
+    }
+    return true // Admin and nurse can see all
+  })
+
   const [loading, setLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null)
@@ -113,10 +60,12 @@ export default function AppointmentsPage() {
   const [isBookDialogOpen, setIsBookDialogOpen] = useState(false)
   const [newAppointmentData, setNewAppointmentData] = useState({
     doctorName: "",
+    doctorId: "",
     type: "",
     date: new Date(),
     time: "09:00",
     notes: "",
+    location: "Main Clinic",
   })
   const [cancelReason, setCancelReason] = useState("")
   const [cancelLoading, setCancelLoading] = useState(false)
@@ -128,33 +77,32 @@ export default function AppointmentsPage() {
   const { toast } = useToast()
 
   useEffect(() => {
-    // Simulate API call
+    // Simulate loading
     const timer = setTimeout(() => {
-      setAppointments(generateAppointments(15, isPatient, fullName))
       setLoading(false)
-    }, 1500)
+    }, 1000)
 
     return () => clearTimeout(timer)
-  }, [isPatient, fullName])
+  }, [])
 
   // Filter appointments based on selected date and status
-  const todayAppointments = appointments.filter(
+  const todayAppointments = filteredAppointments.filter(
     (appointment) => isSameDay(appointment.date, new Date()) && appointment.status === "Scheduled",
   )
 
-  const upcomingAppointments = appointments.filter(
+  const upcomingAppointments = filteredAppointments.filter(
     (appointment) =>
       isAfter(appointment.date, new Date()) &&
       !isSameDay(appointment.date, new Date()) &&
       appointment.status === "Scheduled",
   )
 
-  const pastAppointments = appointments.filter(
+  const pastAppointments = filteredAppointments.filter(
     (appointment) => appointment.status === "Completed" || appointment.status === "Cancelled",
   )
 
   const selectedDateAppointments = selectedDate
-    ? appointments.filter((appointment) => isSameDay(appointment.date, selectedDate))
+    ? filteredAppointments.filter((appointment) => isSameDay(appointment.date, selectedDate))
     : []
 
   const handleViewAppointment = (appointment: any) => {
@@ -170,13 +118,12 @@ export default function AppointmentsPage() {
   const confirmCancel = () => {
     setCancelLoading(true)
 
-    // Simulate API call
+    // Update the appointment status
     setTimeout(() => {
-      setAppointments(
-        appointments.map((appointment) =>
-          appointment.id === selectedAppointment.id ? { ...appointment, status: "Cancelled" } : appointment,
-        ),
-      )
+      updateAppointment(selectedAppointment.id, {
+        status: "Cancelled",
+        notes: selectedAppointment.notes + "\n\nCancellation reason: " + cancelReason,
+      })
 
       setIsCancelDialogOpen(false)
       setCancelLoading(false)
@@ -186,7 +133,7 @@ export default function AppointmentsPage() {
         title: "Appointment cancelled",
         description: "Your appointment has been successfully cancelled.",
       })
-    }, 1500)
+    }, 1000)
   }
 
   const handleRescheduleAppointment = (appointment: any) => {
@@ -206,21 +153,14 @@ export default function AppointmentsPage() {
     const newDate = new Date(rescheduleDate)
     newDate.setHours(hours, minutes)
 
-    // Simulate API call
+    // Update the appointment
     setTimeout(() => {
-      setAppointments(
-        appointments.map((appointment) =>
-          appointment.id === selectedAppointment.id
-            ? {
-                ...appointment,
-                date: newDate,
-                formattedDate: format(newDate, "MMMM d, yyyy"),
-                formattedTime: format(newDate, "h:mm a"),
-                status: "Scheduled",
-              }
-            : appointment,
-        ),
-      )
+      updateAppointment(selectedAppointment.id, {
+        date: newDate,
+        formattedDate: format(newDate, "MMMM d, yyyy"),
+        formattedTime: format(newDate, "h:mm a"),
+        status: "Scheduled",
+      })
 
       setIsRescheduleDialogOpen(false)
       setRescheduleLoading(false)
@@ -229,7 +169,7 @@ export default function AppointmentsPage() {
         title: "Appointment rescheduled",
         description: `Your appointment has been rescheduled to ${format(newDate, "MMMM d, yyyy 'at' h:mm a")}.`,
       })
-    }, 1500)
+    }, 1000)
   }
 
   const handleBookAppointment = () => {
@@ -253,45 +193,47 @@ export default function AppointmentsPage() {
     const appointmentDate = new Date(newAppointmentData.date)
     appointmentDate.setHours(hours, minutes)
 
-    // Simulate API call
+    // Create a new appointment
     setTimeout(() => {
-      const newAppointment = {
-        id: appointments.length + 1,
+      addAppointment({
         patientName: fullName,
+        patientId: userId,
         doctorName: newAppointmentData.doctorName,
+        doctorId: newAppointmentData.doctorId,
         type: newAppointmentData.type,
         date: appointmentDate,
         formattedDate: format(appointmentDate, "MMMM d, yyyy"),
         formattedTime: format(appointmentDate, "h:mm a"),
         status: "Scheduled",
-        location: "Main Clinic",
+        location: newAppointmentData.location,
         notes: newAppointmentData.notes,
         duration: 30,
-      }
+      })
 
-      setAppointments([...appointments, newAppointment])
       setIsBookDialogOpen(false)
       setBookingLoading(false)
 
       // Reset form
       setNewAppointmentData({
         doctorName: "",
+        doctorId: "",
         type: "",
         date: new Date(),
         time: "09:00",
         notes: "",
+        location: "Main Clinic",
       })
 
       toast({
         title: "Appointment booked",
         description: `Your appointment has been scheduled for ${format(appointmentDate, "MMMM d, yyyy 'at' h:mm a")}.`,
       })
-    }, 1500)
+    }, 1000)
   }
 
   // Function to get appointment dates for calendar highlighting
   const getAppointmentDates = () => {
-    return appointments
+    return filteredAppointments
       .filter((appointment) => appointment.status === "Scheduled")
       .map((appointment) => appointment.date)
   }
@@ -844,18 +786,41 @@ export default function AppointmentsPage() {
             <div className="space-y-2">
               <Label htmlFor="doctorName">Healthcare Provider</Label>
               <Select
-                value={newAppointmentData.doctorName}
-                onValueChange={(value) => setNewAppointmentData({ ...newAppointmentData, doctorName: value })}
+                value={newAppointmentData.doctorId}
+                onValueChange={(value) => {
+                  const selectedDoctor = doctors.find((d) => d.id === value)
+                  setNewAppointmentData({
+                    ...newAppointmentData,
+                    doctorId: value,
+                    doctorName: selectedDoctor ? selectedDoctor.name : "",
+                  })
+                }}
               >
                 <SelectTrigger id="doctorName">
                   <SelectValue placeholder="Select a healthcare provider" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Dr. Mutasa">Dr. Mutasa (General Practitioner)</SelectItem>
-                  <SelectItem value="Dr. Chigumba">Dr. Chigumba (Pediatrician)</SelectItem>
-                  <SelectItem value="Dr. Ndlovu">Dr. Ndlovu (Cardiologist)</SelectItem>
-                  <SelectItem value="Dr. Makoni">Dr. Makoni (Dermatologist)</SelectItem>
-                  <SelectItem value="Dr. Zimuto">Dr. Zimuto (Psychiatrist)</SelectItem>
+                  {doctors.length === 0 ? (
+                    <SelectItem value="none" disabled>
+                      No doctors available
+                    </SelectItem>
+                  ) : (
+                    doctors.map((doctor) => (
+                      <SelectItem key={doctor.id} value={doctor.id}>
+                        {doctor.name} ({doctor.specialty})
+                      </SelectItem>
+                    ))
+                  )}
+                  {/* Fallback options if no doctors are in the system yet */}
+                  {doctors.length === 0 && (
+                    <>
+                      <SelectItem value="dr-mutasa">Dr. Mutasa (General Practitioner)</SelectItem>
+                      <SelectItem value="dr-chigumba">Dr. Chigumba (Pediatrician)</SelectItem>
+                      <SelectItem value="dr-ndlovu">Dr. Ndlovu (Cardiologist)</SelectItem>
+                      <SelectItem value="dr-makoni">Dr. Makoni (Dermatologist)</SelectItem>
+                      <SelectItem value="dr-zimuto">Dr. Zimuto (Psychiatrist)</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -876,6 +841,25 @@ export default function AppointmentsPage() {
                   <SelectItem value="Vaccination">Vaccination</SelectItem>
                   <SelectItem value="Lab Test">Lab Test</SelectItem>
                   <SelectItem value="Prescription Renewal">Prescription Renewal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Select
+                value={newAppointmentData.location}
+                onValueChange={(value) => setNewAppointmentData({ ...newAppointmentData, location: value })}
+              >
+                <SelectTrigger id="location">
+                  <SelectValue placeholder="Select location" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Main Clinic">Main Clinic</SelectItem>
+                  <SelectItem value="Telehealth">Telehealth</SelectItem>
+                  <SelectItem value="Rural Outpost">Rural Outpost</SelectItem>
+                  <SelectItem value="Mobile Clinic">Mobile Clinic</SelectItem>
+                  <SelectItem value="Home Visit">Home Visit</SelectItem>
                 </SelectContent>
               </Select>
             </div>

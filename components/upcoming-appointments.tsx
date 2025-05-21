@@ -4,64 +4,35 @@ import { useEffect, useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-
-// Generate random appointment data
-const generateAppointments = () => {
-  const firstNames = ["Tendai", "Chipo", "Tatenda", "Farai", "Nyasha", "Kudzai", "Tafadzwa", "Rumbidzai"]
-  const lastNames = ["Moyo", "Ncube", "Dube", "Sibanda", "Mpofu", "Ndlovu", "Mutasa", "Chigumba"]
-  const doctorFirstNames = ["Sarah", "John", "Michael", "Elizabeth", "Robert", "Patricia"]
-  const doctorLastNames = ["Johnson", "Smith", "Williams", "Brown", "Jones", "Miller"]
-  const appointmentTypes = ["Checkup", "Follow-up", "Consultation", "Vaccination", "Screening"]
-  const statuses = ["Confirmed", "Pending", "Rescheduled"]
-
-  // Get current date
-  const today = new Date()
-
-  return Array.from({ length: 3 }, (_, i) => {
-    // Generate a date within the next 7 days
-    const appointmentDate = new Date(today)
-    appointmentDate.setDate(today.getDate() + Math.floor(Math.random() * 7) + 1)
-
-    // Generate a random time between 8 AM and 5 PM
-    const hour = 8 + Math.floor(Math.random() * 10)
-    const minute = Math.floor(Math.random() * 4) * 15 // 0, 15, 30, or 45
-    appointmentDate.setHours(hour, minute)
-
-    const patientFirstName = firstNames[Math.floor(Math.random() * firstNames.length)]
-    const patientLastName = lastNames[Math.floor(Math.random() * lastNames.length)]
-    const doctorFirstName = doctorFirstNames[Math.floor(Math.random() * doctorFirstNames.length)]
-    const doctorLastName = doctorLastNames[Math.floor(Math.random() * doctorLastNames.length)]
-
-    return {
-      id: i + 1,
-      patientName: `${patientFirstName} ${patientLastName}`,
-      doctorName: `Dr. ${doctorFirstName} ${doctorLastName}`,
-      type: appointmentTypes[Math.floor(Math.random() * appointmentTypes.length)],
-      status: statuses[Math.floor(Math.random() * statuses.length)],
-      date: appointmentDate.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }),
-      time: appointmentDate.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      }),
-      patientInitials: `${patientFirstName[0]}${patientLastName[0]}`,
-      doctorInitials: `${doctorFirstName[0]}${doctorLastName[0]}`,
-    }
-  })
-}
+import { useDataStore } from "@/lib/data-store"
+import useAuthStore from "@/lib/auth-store"
+import Link from "next/link"
 
 export function UpcomingAppointments({ isPatientView = false }) {
-  const [appointments, setAppointments] = useState<any[]>([])
+  const { userData } = useAuthStore()
+  const userId = userData?.id || ""
+  const isPatient = userData?.role === "patient"
+  const isDoctor = userData?.role === "doctor"
+
+  const { appointments } = useDataStore()
+
+  // Filter appointments based on user role
+  const userAppointments = appointments
+    .filter((appointment) => {
+      if (isPatient) {
+        return appointment.patientId === userId
+      } else if (isDoctor) {
+        return appointment.doctorId === userId
+      }
+      return true // Admin and nurse can see all
+    })
+    .filter((appointment) => appointment.status === "Scheduled")
+
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Simulate API call
+    // Simulate loading
     const timer = setTimeout(() => {
-      setAppointments(generateAppointments())
       setLoading(false)
     }, 1000)
 
@@ -84,42 +55,43 @@ export function UpcomingAppointments({ isPatientView = false }) {
     )
   }
 
+  if (userAppointments.length === 0) {
+    return (
+      <div className="flex h-40 flex-col items-center justify-center space-y-3">
+        <p className="text-center text-muted-foreground">No upcoming appointments scheduled.</p>
+        <Button variant="outline" asChild>
+          <Link href="/dashboard/appointments">Book an Appointment</Link>
+        </Button>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
-      {appointments.map((appointment) => (
+      {userAppointments.slice(0, 3).map((appointment) => (
         <div key={appointment.id} className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Avatar>
               <AvatarImage
                 src={`/placeholder.svg?height=40&width=40&text=${
-                  isPatientView ? appointment.doctorInitials : appointment.patientInitials
+                  isPatientView ? appointment.doctorName.substring(0, 2) : appointment.patientName.substring(0, 2)
                 }`}
               />
               <AvatarFallback>
-                {isPatientView ? appointment.doctorInitials : appointment.patientInitials}
+                {isPatientView ? appointment.doctorName.substring(0, 2) : appointment.patientName.substring(0, 2)}
               </AvatarFallback>
             </Avatar>
             <div>
               <p className="text-sm font-medium">{isPatientView ? appointment.doctorName : appointment.patientName}</p>
               <p className="text-xs text-muted-foreground">
-                {appointment.date} at {appointment.time}
+                {appointment.formattedDate} at {appointment.formattedTime}
               </p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Badge
-              variant={
-                appointment.status === "Confirmed"
-                  ? "default"
-                  : appointment.status === "Pending"
-                    ? "outline"
-                    : "secondary"
-              }
-            >
-              {appointment.type}
-            </Badge>
-            <Button variant="outline" size="sm">
-              {isPatientView ? "Join" : "View"}
+            <Badge variant="outline">{appointment.type}</Badge>
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/dashboard/appointments`}>{appointment.location === "Telehealth" ? "Join" : "View"}</Link>
             </Button>
           </div>
         </div>

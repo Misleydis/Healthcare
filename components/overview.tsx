@@ -1,75 +1,46 @@
 "use client"
 
-import {
-  useEffect,
-  useState,
-} from 'react';
+import { useEffect, useState } from "react"
 
-import { Badge } from '@/components/ui/badge';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import useAuthStore from '@/lib/auth-store';
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import useAuthStore from "@/lib/auth-store"
+import { useDataStore } from "@/lib/data-store"
 
-// Generate random data for the chart
-const generateChartData = (isDoctor: boolean) => {
-  if (isDoctor) {
-    // For doctors, show patient visits data
-    return [
-      { name: "Jan", total: Math.floor(Math.random() * 50) + 20 },
-      { name: "Feb", total: Math.floor(Math.random() * 50) + 20 },
-      { name: "Mar", total: Math.floor(Math.random() * 50) + 20 },
-      { name: "Apr", total: Math.floor(Math.random() * 50) + 20 },
-      { name: "May", total: Math.floor(Math.random() * 50) + 20 },
-      { name: "Jun", total: Math.floor(Math.random() * 50) + 20 },
-      { name: "Jul", total: Math.floor(Math.random() * 50) + 20 },
-      { name: "Aug", total: Math.floor(Math.random() * 50) + 20 },
-      { name: "Sep", total: Math.floor(Math.random() * 50) + 20 },
-      { name: "Oct", total: Math.floor(Math.random() * 50) + 20 },
-      { name: "Nov", total: Math.floor(Math.random() * 50) + 20 },
-      { name: "Dec", total: Math.floor(Math.random() * 50) + 20 },
-    ]
-  } else {
-    // For patients, show health metrics data
-    return [
-      { name: "Jan", total: Math.floor(Math.random() * 30) + 60 },
-      { name: "Feb", total: Math.floor(Math.random() * 30) + 60 },
-      { name: "Mar", total: Math.floor(Math.random() * 30) + 60 },
-      { name: "Apr", total: Math.floor(Math.random() * 30) + 60 },
-      { name: "May", total: Math.floor(Math.random() * 30) + 60 },
-      { name: "Jun", total: Math.floor(Math.random() * 30) + 60 },
-      { name: "Jul", total: Math.floor(Math.random() * 30) + 60 },
-      { name: "Aug", total: Math.floor(Math.random() * 30) + 60 },
-      { name: "Sep", total: Math.floor(Math.random() * 30) + 60 },
-      { name: "Oct", total: Math.floor(Math.random() * 30) + 60 },
-      { name: "Nov", total: Math.floor(Math.random() * 30) + 60 },
-      { name: "Dec", total: Math.floor(Math.random() * 30) + 60 },
-    ]
-  }
-}
-
-export default function Overview() {
+export function Overview() {
   const { userData: user } = useAuthStore()
   const isDoctor = user?.role === "doctor"
   const isAdmin = user?.role === "admin"
   const isNurse = user?.role === "nurse"
   const isPatient = user?.role === "patient"
-  const [data, setData] = useState<any[]>([])
+  const userId = user?.id || ""
+
+  const { appointments, patients, healthRecords } = useDataStore()
+
+  // Filter data based on user role
+  const userAppointments = appointments.filter((appointment) => {
+    if (isPatient) {
+      return appointment.patientId === userId
+    } else if (isDoctor) {
+      return appointment.doctorId === userId
+    }
+    return true // Admin and nurse can see all
+  })
+
+  const userPatients = isDoctor ? patients.filter((patient) => patient.doctorId === userId) : patients
+
+  const userHealthRecords = isPatient ? healthRecords.filter((record) => record.patientId === userId) : healthRecords
+
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Simulate API call
+    // Simulate loading
     const timer = setTimeout(() => {
-      setData(generateChartData(isDoctor))
       setLoading(false)
-    }, 1500)
+    }, 1000)
 
     return () => clearTimeout(timer)
-  }, [isDoctor])
+  }, [])
 
   if (loading) {
     return (
@@ -118,9 +89,40 @@ export default function Overview() {
             <CardDescription>Your healthcare activities will appear here</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-center py-8">
-              <p className="text-sm text-muted-foreground">No activities recorded yet</p>
-            </div>
+            {userAppointments.length === 0 && userHealthRecords.length === 0 ? (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-sm text-muted-foreground">No activities recorded yet</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {userAppointments.slice(0, 2).map((appointment, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">
+                        {appointment.type} with {appointment.doctorName}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {appointment.formattedDate} at {appointment.formattedTime}
+                      </p>
+                    </div>
+                    <Badge variant={appointment.status === "Scheduled" ? "default" : "secondary"}>
+                      {appointment.status}
+                    </Badge>
+                  </div>
+                ))}
+                {userHealthRecords.slice(0, 2).map((record, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{record.recordType}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {record.formattedDate} by {record.doctor}
+                      </p>
+                    </div>
+                    <Badge variant="outline">{record.diagnosis}</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -138,23 +140,33 @@ export default function Overview() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">Total Patients</p>
-              <p className="text-2xl font-bold">1,234</p>
-              <p className="text-xs text-muted-foreground">+12% from last month</p>
+              <p className="text-2xl font-bold">{userPatients.length}</p>
+              <p className="text-xs text-muted-foreground">
+                {userPatients.length === 0 ? "No patients yet" : "+12% from last month"}
+              </p>
             </div>
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">Appointments Today</p>
-              <p className="text-2xl font-bold">24</p>
-              <p className="text-xs text-muted-foreground">3 pending confirmations</p>
+              <p className="text-2xl font-bold">
+                {
+                  userAppointments.filter(
+                    (a) => a.status === "Scheduled" && new Date(a.date).toDateString() === new Date().toDateString(),
+                  ).length
+                }
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {userAppointments.length === 0 ? "No appointments yet" : "3 pending confirmations"}
+              </p>
             </div>
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">Patient Satisfaction</p>
-              <p className="text-2xl font-bold">4.8/5</p>
-              <p className="text-xs text-muted-foreground">Based on 156 reviews</p>
+              <p className="text-2xl font-bold">--</p>
+              <p className="text-xs text-muted-foreground">No reviews yet</p>
             </div>
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">Average Wait Time</p>
-              <p className="text-2xl font-bold">12 min</p>
-              <p className="text-xs text-muted-foreground">-2 min from last week</p>
+              <p className="text-2xl font-bold">--</p>
+              <p className="text-xs text-muted-foreground">Not calculated yet</p>
             </div>
           </div>
         </CardContent>
@@ -165,29 +177,37 @@ export default function Overview() {
           <CardDescription>Latest appointments and updates</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Annual Check-up - John Doe</p>
-                <p className="text-xs text-muted-foreground">Completed on March 15, 2024</p>
-              </div>
-              <Badge variant="secondary">Completed</Badge>
+          {userAppointments.length === 0 ? (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-sm text-muted-foreground">No activities recorded yet</p>
             </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Follow-up - Jane Smith</p>
-                <p className="text-xs text-muted-foreground">Completed on March 14, 2024</p>
-              </div>
-              <Badge variant="secondary">Completed</Badge>
+          ) : (
+            <div className="space-y-4">
+              {userAppointments.slice(0, 3).map((appointment, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {appointment.type} - {appointment.patientName}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {appointment.formattedDate} at {appointment.formattedTime}
+                    </p>
+                  </div>
+                  <Badge
+                    variant={
+                      appointment.status === "Scheduled"
+                        ? "outline"
+                        : appointment.status === "Completed"
+                          ? "secondary"
+                          : "default"
+                    }
+                  >
+                    {appointment.status}
+                  </Badge>
+                </div>
+              ))}
             </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">New Patient - Robert Johnson</p>
-                <p className="text-xs text-muted-foreground">Scheduled for March 16, 2024</p>
-              </div>
-              <Badge variant="outline">Upcoming</Badge>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>

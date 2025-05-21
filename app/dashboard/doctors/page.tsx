@@ -20,79 +20,22 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/components/ui/use-toast"
-import { Search, Calendar, Video, MessageSquare, Star, MapPin, Clock, User } from "lucide-react"
+import { Search, Plus, Calendar, Video, MessageSquare, Star, MapPin, Clock, User } from "lucide-react"
 import Link from "next/link"
-import { format } from "date-fns"
 import useAuthStore from "@/lib/auth-store"
-
-// Generate doctors data
-const generateDoctors = (count = 10) => {
-  const specialties = [
-    "General Practitioner",
-    "Pediatrician",
-    "Cardiologist",
-    "Dermatologist",
-    "Neurologist",
-    "Psychiatrist",
-    "Gynecologist",
-    "Orthopedic Surgeon",
-    "Ophthalmologist",
-    "Infectious Disease Specialist",
-  ]
-
-  const firstNames = ["John", "Sarah", "Michael", "Elizabeth", "David", "Mary", "Robert", "Patricia", "James", "Linda"]
-  const lastNames = ["Mutasa", "Chigumba", "Ndlovu", "Makoni", "Zimuto", "Moyo", "Ncube", "Dube", "Sibanda", "Mpofu"]
-
-  const locations = [
-    "Harare Central Hospital",
-    "Bulawayo General Hospital",
-    "Mutare Provincial Hospital",
-    "Gweru Medical Center",
-    "Masvingo Health Clinic",
-  ]
-
-  return Array.from({ length: count }, (_, i) => {
-    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)]
-    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)]
-    const specialty = specialties[Math.floor(Math.random() * specialties.length)]
-    const location = locations[Math.floor(Math.random() * locations.length)]
-    const rating = (3 + Math.random() * 2).toFixed(1)
-    const experience = 5 + Math.floor(Math.random() * 20)
-
-    return {
-      id: i + 1,
-      name: `Dr. ${firstName} ${lastName}`,
-      specialty,
-      location,
-      rating: Number.parseFloat(rating),
-      experience,
-      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@mjshealthhub.org`,
-      phone: `+263 7${Math.floor(Math.random() * 10000000)}`,
-      bio: `Dr. ${lastName} is a highly experienced ${specialty.toLowerCase()} with over ${experience} years of practice. Specializes in providing comprehensive healthcare services to patients in Zimbabwe.`,
-      availability: ["Monday", "Wednesday", "Friday"],
-      availableTimes: ["9:00 AM - 12:00 PM", "2:00 PM - 5:00 PM"],
-      isMyDoctor: Math.random() > 0.7,
-      lastVisit:
-        Math.random() > 0.5
-          ? format(new Date(Date.now() - Math.floor(Math.random() * 90) * 24 * 60 * 60 * 1000), "MMMM d, yyyy")
-          : null,
-      nextAppointment:
-        Math.random() > 0.7
-          ? format(
-              new Date(Date.now() + Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000),
-              "MMMM d, yyyy 'at' h:mm a",
-            )
-          : null,
-      initials: `${firstName[0]}${lastName[0]}`,
-    }
-  })
-}
+import { useDataStore, type Doctor } from "@/lib/data-store"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function DoctorsPage() {
   const { userData } = useAuthStore()
   const fullName = userData ? `${userData.firstName} ${userData.lastName}` : "User"
+  const userId = userData?.id || ""
+  const isPatient = userData?.role === "patient"
+  const isAdmin = userData?.role === "admin"
 
-  const [doctors, setDoctors] = useState<any[]>([])
+  // Get doctors from data store
+  const { doctors, addDoctor, updateDoctor, deleteDoctor } = useDataStore()
+
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedDoctor, setSelectedDoctor] = useState<any>(null)
@@ -104,15 +47,24 @@ export default function DoctorsPage() {
   const [cameraPermission, setCameraPermission] = useState<boolean | null>(null)
   const [micPermission, setMicPermission] = useState<boolean | null>(null)
   const [isConnecting, setIsConnecting] = useState(false)
+  const [isAddDoctorDialogOpen, setIsAddDoctorDialogOpen] = useState(false)
+  const [newDoctorData, setNewDoctorData] = useState({
+    name: "",
+    specialty: "",
+    location: "",
+    email: "",
+    phone: "",
+    bio: "",
+    experience: 0,
+  })
 
   const { toast } = useToast()
 
   useEffect(() => {
-    // Simulate API call
+    // Simulate loading
     const timer = setTimeout(() => {
-      setDoctors(generateDoctors(15))
       setLoading(false)
-    }, 1500)
+    }, 1000)
 
     return () => clearTimeout(timer)
   }, [])
@@ -155,7 +107,7 @@ export default function DoctorsPage() {
       setMessageSending(false)
       setIsMessageDialogOpen(false)
       setMessageText("")
-    }, 1500)
+    }, 1000)
   }
 
   const initiateVideoCall = (doctor: any) => {
@@ -186,7 +138,60 @@ export default function DoctorsPage() {
 
       // Redirect to telehealth join page
       window.location.href = "/dashboard/telehealth/join"
-    }, 2000)
+    }, 1000)
+  }
+
+  const handleAddDoctor = () => {
+    setIsAddDoctorDialogOpen(true)
+  }
+
+  const confirmAddDoctor = () => {
+    const firstName = newDoctorData.name.split(" ")[0] || ""
+    const lastName = newDoctorData.name.split(" ")[1] || ""
+
+    const doctorData: Omit<Doctor, "id"> = {
+      name: newDoctorData.name,
+      specialty: newDoctorData.specialty,
+      location: newDoctorData.location,
+      rating: 4.5, // Default rating
+      experience: newDoctorData.experience,
+      email: newDoctorData.email,
+      phone: newDoctorData.phone,
+      bio: newDoctorData.bio,
+      availability: ["Monday", "Wednesday", "Friday"],
+      availableTimes: ["9:00 AM - 12:00 PM", "2:00 PM - 5:00 PM"],
+      isMyDoctor: false,
+      lastVisit: null,
+      nextAppointment: null,
+      initials: `${firstName[0] || ""}${lastName[0] || ""}`,
+    }
+
+    addDoctor(doctorData)
+
+    setIsAddDoctorDialogOpen(false)
+    setNewDoctorData({
+      name: "",
+      specialty: "",
+      location: "",
+      email: "",
+      phone: "",
+      bio: "",
+      experience: 0,
+    })
+
+    toast({
+      title: "Doctor added",
+      description: `${newDoctorData.name} has been added to the system.`,
+    })
+  }
+
+  const handleSetAsMyDoctor = (doctor: Doctor) => {
+    updateDoctor(doctor.id, { isMyDoctor: true })
+
+    toast({
+      title: "Doctor assigned",
+      description: `${doctor.name} has been assigned as your doctor.`,
+    })
   }
 
   return (
@@ -210,6 +215,12 @@ export default function DoctorsPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            {isAdmin && (
+              <Button onClick={handleAddDoctor}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Doctor
+              </Button>
+            )}
           </div>
         </div>
 
@@ -249,6 +260,9 @@ export default function DoctorsPage() {
                 <div className="col-span-full flex h-40 flex-col items-center justify-center space-y-3">
                   <User className="h-10 w-10 text-muted-foreground" />
                   <p className="text-center text-muted-foreground">You don't have any assigned doctors yet.</p>
+                  <p className="text-center text-sm text-muted-foreground">
+                    Visit the "All Doctors" tab to find and assign a doctor.
+                  </p>
                 </div>
               ) : (
                 <>
@@ -337,6 +351,12 @@ export default function DoctorsPage() {
                 <div className="col-span-full flex h-40 flex-col items-center justify-center space-y-3">
                   <User className="h-10 w-10 text-muted-foreground" />
                   <p className="text-center text-muted-foreground">No doctors found matching your search.</p>
+                  {isAdmin && (
+                    <Button onClick={handleAddDoctor} variant="outline">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Doctor
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <>
@@ -375,12 +395,19 @@ export default function DoctorsPage() {
                         <Button variant="outline" size="sm" className="flex-1" onClick={() => handleViewDoctor(doctor)}>
                           View Profile
                         </Button>
-                        <Button size="sm" className="flex-1" asChild>
-                          <Link href="/dashboard/appointments">
-                            <Calendar className="mr-2 h-4 w-4" />
-                            Book
-                          </Link>
-                        </Button>
+                        {isPatient && !doctor.isMyDoctor ? (
+                          <Button size="sm" className="flex-1" onClick={() => handleSetAsMyDoctor(doctor)}>
+                            <User className="mr-2 h-4 w-4" />
+                            Set as My Doctor
+                          </Button>
+                        ) : (
+                          <Button size="sm" className="flex-1" asChild>
+                            <Link href="/dashboard/appointments">
+                              <Calendar className="mr-2 h-4 w-4" />
+                              Book
+                            </Link>
+                          </Button>
+                        )}
                       </CardFooter>
                     </Card>
                   ))}
@@ -460,97 +487,19 @@ export default function DoctorsPage() {
                           >
                             View Profile
                           </Button>
-                          <Button size="sm" className="flex-1" asChild>
-                            <Link href="/dashboard/appointments">
-                              <Calendar className="mr-2 h-4 w-4" />
-                              Book
-                            </Link>
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                </>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="specialists" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {loading ? (
-                <>
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <Card key={i} className="overflow-hidden">
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center gap-4">
-                          <Skeleton className="h-12 w-12 rounded-full" />
-                          <div>
-                            <Skeleton className="h-5 w-32" />
-                            <Skeleton className="mt-1 h-4 w-24" />
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="mt-2 h-4 w-3/4" />
-                      </CardContent>
-                      <CardFooter>
-                        <Skeleton className="h-9 w-full" />
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </>
-              ) : (
-                <>
-                  {filteredDoctors
-                    .filter(
-                      (doctor) => doctor.specialty !== "General Practitioner" && !doctor.specialty.includes("General"),
-                    )
-                    .map((doctor) => (
-                      <Card key={doctor.id} className="overflow-hidden">
-                        <CardHeader className="pb-2">
-                          <div className="flex items-center gap-4">
-                            <Avatar className="h-12 w-12">
-                              <AvatarImage src={`/placeholder.svg?height=48&width=48&text=${doctor.initials}`} />
-                              <AvatarFallback>{doctor.initials}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <CardTitle className="text-base">{doctor.name}</CardTitle>
-                              <CardDescription>{doctor.specialty}</CardDescription>
-                            </div>
-                            {doctor.isMyDoctor && (
-                              <Badge className="ml-auto bg-emerald-500 hover:bg-emerald-600">My Doctor</Badge>
-                            )}
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pb-2">
-                          <div className="space-y-2 text-sm">
-                            <div className="flex items-center gap-2">
-                              <MapPin className="h-4 w-4 text-muted-foreground" />
-                              <span>{doctor.location}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Star className="h-4 w-4 text-amber-500" />
-                              <span>
-                                {doctor.rating} • {doctor.experience} years experience
-                              </span>
-                            </div>
-                          </div>
-                        </CardContent>
-                        <CardFooter className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => handleViewDoctor(doctor)}
-                          >
-                            View Profile
-                          </Button>
-                          <Button size="sm" className="flex-1" asChild>
-                            <Link href="/dashboard/appointments">
-                              <Calendar className="mr-2 h-4 w-4" />
-                              Book
-                            </Link>
-                          </Button>
+                          {isPatient && !doctor.isMyDoctor ? (
+                            <Button size="sm" className="flex-1" onClick={() => handleSetAsMyDoctor(doctor)}>
+                              <User className="mr-2 h-4 w-4" />
+                              Set as My Doctor
+                            </Button>
+                          ) : (
+                            <Button size="sm" className="flex-1" asChild>
+                              <Link href="/dashboard/appointments">
+                                <Calendar className="mr-2 h-4 w-4" />
+                                Book
+                              </Link>
+                            </Button>
+                          )}
                         </CardFooter>
                       </Card>
                     ))}
@@ -675,6 +624,130 @@ export default function DoctorsPage() {
                 disabled={isConnecting || cameraPermission === false || micPermission === false}
               >
                 {isConnecting ? <>Connecting...</> : "Start Video Call"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isAddDoctorDialogOpen} onOpenChange={setIsAddDoctorDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Add New Doctor</DialogTitle>
+              <DialogDescription>Enter the details to add a new doctor to the system</DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="doctorName" className="text-right">
+                  Full Name
+                </Label>
+                <Input
+                  id="doctorName"
+                  value={newDoctorData.name}
+                  onChange={(e) => setNewDoctorData({ ...newDoctorData, name: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="specialty" className="text-right">
+                  Specialty
+                </Label>
+                <Select
+                  value={newDoctorData.specialty}
+                  onValueChange={(value) => setNewDoctorData({ ...newDoctorData, specialty: value })}
+                >
+                  <SelectTrigger id="specialty" className="col-span-3">
+                    <SelectValue placeholder="Select specialty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="General Practitioner">General Practitioner</SelectItem>
+                    <SelectItem value="Pediatrician">Pediatrician</SelectItem>
+                    <SelectItem value="Cardiologist">Cardiologist</SelectItem>
+                    <SelectItem value="Dermatologist">Dermatologist</SelectItem>
+                    <SelectItem value="Neurologist">Neurologist</SelectItem>
+                    <SelectItem value="Psychiatrist">Psychiatrist</SelectItem>
+                    <SelectItem value="Gynecologist">Gynecologist</SelectItem>
+                    <SelectItem value="Orthopedic Surgeon">Orthopedic Surgeon</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="location" className="text-right">
+                  Location
+                </Label>
+                <Input
+                  id="location"
+                  value={newDoctorData.location}
+                  onChange={(e) => setNewDoctorData({ ...newDoctorData, location: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="experience" className="text-right">
+                  Experience (years)
+                </Label>
+                <Input
+                  id="experience"
+                  type="number"
+                  value={newDoctorData.experience.toString()}
+                  onChange={(e) =>
+                    setNewDoctorData({ ...newDoctorData, experience: Number.parseInt(e.target.value) || 0 })
+                  }
+                  className="col-span-3"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="email" className="text-right">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newDoctorData.email}
+                  onChange={(e) => setNewDoctorData({ ...newDoctorData, email: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="phone" className="text-right">
+                  Phone
+                </Label>
+                <Input
+                  id="phone"
+                  value={newDoctorData.phone}
+                  onChange={(e) => setNewDoctorData({ ...newDoctorData, phone: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="bio" className="text-right">
+                  Bio
+                </Label>
+                <Textarea
+                  id="bio"
+                  value={newDoctorData.bio}
+                  onChange={(e) => setNewDoctorData({ ...newDoctorData, bio: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="secondary" onClick={() => setIsAddDoctorDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={confirmAddDoctor}
+                disabled={!newDoctorData.name || !newDoctorData.specialty}
+              >
+                Add Doctor
               </Button>
             </DialogFooter>
           </DialogContent>

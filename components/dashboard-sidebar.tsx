@@ -1,150 +1,168 @@
 "use client"
 
-import type React from 'react';
-
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import {
-  BarChart,
-  Bell,
-  Brain,
+  LayoutDashboard,
   Calendar,
-  FileText,
-  Home,
-  Pill,
-  Settings,
-  Stethoscope,
-  User,
   Users,
+  FileText,
+  Activity,
+  Settings,
+  Bell,
+  MessageSquare,
+  Lightbulb,
   Video,
-} from 'lucide-react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+  Pill,
+  ClipboardList,
+} from "lucide-react"
 
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import type { UserRole } from '@/lib/auth-store';
-import useAuthStore from '@/lib/auth-store';
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { useAuthStore } from "@/lib/auth-store"
 
-interface SidebarItem {
-  title: string
-  href: string
-  icon: React.ComponentType<{ className?: string }>
-  roles: UserRole[]
+interface DashboardSidebarProps {
+  className?: string
 }
 
-export function DashboardSidebar() {
+export function DashboardSidebar({ className }: DashboardSidebarProps) {
   const pathname = usePathname()
-  const { userData } = useAuthStore()
-  const userRole = userData?.role || "patient"
+  const { user } = useAuthStore()
 
-  const sidebarItems: SidebarItem[] = [
+  const isPatient = user?.role === "patient"
+  const isDoctor = user?.role === "doctor"
+  const isNurse = user?.role === "nurse"
+  const isAdmin = user?.role === "admin"
+
+  const routes = [
     {
-      title: "Dashboard",
+      label: "Dashboard",
+      icon: LayoutDashboard,
       href: "/dashboard",
-      icon: Home,
-      roles: ["admin", "doctor", "nurse", "patient"],
+      active: pathname === "/dashboard",
+      roles: ["patient", "doctor", "nurse", "admin"],
     },
     {
-      title: "Patients",
-      href: "/dashboard/patients",
-      icon: Users,
-      roles: ["admin", "doctor", "nurse"],
-    },
-    {
-      title: "My Health Records",
-      href: "/dashboard/records",
-      icon: FileText,
-      roles: ["patient"],
-    },
-    {
-      title: "Appointments",
-      href: "/dashboard/appointments",
+      label: "Appointments",
       icon: Calendar,
-      roles: ["patient", "doctor", "nurse"],
+      href: "/dashboard/appointments",
+      active: pathname === "/dashboard/appointments",
+      roles: ["patient", "doctor", "nurse", "admin"],
     },
     {
-      title: "Telehealth",
-      href: "/dashboard/telehealth",
-      icon: Video,
-      roles: ["admin", "doctor", "nurse", "patient"],
+      label: "Patients",
+      icon: Users,
+      href: "/dashboard/patients",
+      active: pathname === "/dashboard/patients",
+      roles: ["doctor", "nurse", "admin"],
     },
     {
-      title: "Prescriptions",
-      href: "/dashboard/prescriptions",
-      icon: Pill,
-      roles: ["patient"],
-    },
-    {
-      title: "Prescriptions Management",
-      href: "/dashboard/prescriptions-management",
-      icon: Pill,
-      roles: ["doctor", "nurse"],
-    },
-    {
-      title: "My Doctors",
+      label: "Doctors",
+      icon: Users,
       href: "/dashboard/doctors",
-      icon: Stethoscope,
-      roles: ["patient"],
+      active: pathname === "/dashboard/doctors",
+      roles: ["patient", "admin"],
     },
     {
-      title: "Analytics",
+      label: "Health Records",
+      icon: FileText,
+      href: "/dashboard/records",
+      active: pathname === "/dashboard/records",
+      roles: ["patient", "doctor", "nurse", "admin"],
+    },
+    {
+      label: "Medications",
+      icon: Pill,
+      href: "/dashboard/medications",
+      active: pathname === "/dashboard/medications",
+      roles: ["patient", "doctor", "nurse", "admin"],
+    },
+    {
+      label: "Prescriptions",
+      icon: ClipboardList,
+      href: "/dashboard/prescriptions",
+      active: pathname === "/dashboard/prescriptions",
+      roles: ["patient", "doctor", "admin"],
+    },
+    {
+      label: "Telehealth",
+      icon: Video,
+      href: "/dashboard/telehealth",
+      active: pathname === "/dashboard/telehealth",
+      roles: ["patient", "doctor"],
+    },
+    {
+      label: "Analytics",
+      icon: Activity,
       href: "/dashboard/analytics",
-      icon: BarChart,
-      roles: ["admin", "doctor"],
+      active: pathname === "/dashboard/analytics",
+      roles: ["doctor", "admin"],
     },
     {
-      title: "ML Insights",
+      label: "AI Insights",
+      icon: Lightbulb,
       href: "/dashboard/insights",
-      icon: Brain,
-      roles: ["admin", "doctor"],
+      active: pathname === "/dashboard/insights",
+      roles: ["patient", "doctor"],
     },
     {
-      title: "Notifications",
-      href: "/dashboard/notifications",
-      icon: Bell,
-      roles: ["admin", "doctor", "nurse", "patient"],
-    },
-    {
-      title: "Settings",
-      href: "/dashboard/settings",
-      icon: Settings,
-      roles: ["admin", "doctor", "nurse", "patient"],
-    },
-    {
-      title: "Profile",
-      href: "/dashboard/profile",
-      icon: User,
-      roles: ["admin", "doctor", "nurse", "patient"],
-    },
-    {
-      title: "Chatbot",
+      label: "Chatbot",
+      icon: MessageSquare,
       href: "/dashboard/chatbot",
-      icon: Brain,
-      roles: ["patient"],
+      active: pathname === "/dashboard/chatbot",
+      roles: ["patient", "doctor", "nurse", "admin"],
+    },
+    {
+      label: "Notifications",
+      icon: Bell,
+      href: "/dashboard/notifications",
+      active: pathname === "/dashboard/notifications",
+      roles: ["patient", "doctor", "nurse", "admin"],
+    },
+    {
+      label: "Settings",
+      icon: Settings,
+      href: "/dashboard/settings",
+      active: pathname === "/dashboard/settings",
+      roles: ["patient", "doctor", "nurse", "admin"],
     },
   ]
 
-  const filteredItems = sidebarItems.filter((item) => item.roles.includes(userRole))
-
   return (
-    <div className="hidden border-r bg-muted/40 md:block md:w-64">
-      <ScrollArea className="h-full py-2">
-        <nav className="grid gap-1 px-2">
-          {filteredItems.map((item) => (
-            <Button
-              key={item.href}
-              variant={pathname === item.href ? "secondary" : "ghost"}
-              className={cn("flex h-10 items-center justify-start gap-2 px-4", pathname === item.href && "bg-muted")}
-              asChild
-            >
-              <Link href={item.href}>
-                <item.icon className="h-5 w-5" />
-                <span>{item.title}</span>
-              </Link>
-            </Button>
-          ))}
-        </nav>
-      </ScrollArea>
+    <div className={cn("pb-12 border-r h-screen", className)}>
+      <div className="space-y-4 py-4">
+        <div className="px-3 py-2">
+          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">Health Portal</h2>
+          <div className="space-y-1">
+            <ScrollArea className="h-[calc(100vh-10rem)]">
+              <div className="space-y-1">
+                {routes.map((route) => {
+                  // Only show routes that are applicable to the user's role
+                  if (!user || !route.roles.includes(user.role)) {
+                    return null
+                  }
+
+                  return (
+                    <Button
+                      key={route.href}
+                      variant={route.active ? "secondary" : "ghost"}
+                      size="sm"
+                      className="w-full justify-start"
+                      asChild
+                    >
+                      <Link href={route.href}>
+                        <route.icon className="mr-2 h-4 w-4" />
+                        {route.label}
+                      </Link>
+                    </Button>
+                  )
+                })}
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
