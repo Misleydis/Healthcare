@@ -6,12 +6,13 @@ import {
   Calendar,
   FileText,
   Pill,
+  Stethoscope,
   Users,
 } from 'lucide-react';
 
 import AIRecommendations from '@/components/ai-recommendations';
-import { Overview } from '@/components/overview';
-import { RecentPatients } from '@/components/recent-patients';
+import Overview from '@/components/overview';
+import RecentPatients from '@/components/recent-patients';
 import {
   Card,
   CardContent,
