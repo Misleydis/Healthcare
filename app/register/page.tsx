@@ -1,19 +1,48 @@
 "use client"
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Activity, AlertCircle, Loader2 } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import useAuthStore from "@/lib/auth-store"
+import { useState } from 'react';
+
+import {
+  Activity,
+  AlertCircle,
+  Loader2,
+} from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+import {
+  Alert,
+  AlertDescription,
+} from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import useAuthStore from '@/lib/auth-store';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 const formSchema = z
   .object({
@@ -32,7 +61,7 @@ const formSchema = z
     lastName: z.string().min(1, {
       message: "Last name is required.",
     }),
-    role: z.enum(["admin", "doctor", "nurse", "patient"], {
+    role: z.enum(["doctor", "nurse", "patient"], {
       required_error: "Please select a role.",
     }),
     specialty: z.string().optional(),
@@ -166,7 +195,6 @@ export default function RegisterPage() {
                         <SelectItem value="patient">Patient</SelectItem>
                         <SelectItem value="doctor">Doctor</SelectItem>
                         <SelectItem value="nurse">Nurse</SelectItem>
-                        <SelectItem value="admin">Administrator</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
