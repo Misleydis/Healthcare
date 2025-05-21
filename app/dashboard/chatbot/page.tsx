@@ -144,22 +144,25 @@ export default function ChatbotPage() {
       .sort((a, b) => b.matchScore - a.matchScore || (b.severity === 'high' ? 1 : -1));
   
     if (matchedSymptoms.length === 0) {
-      return '🤔 I couldn’t quite catch any specific symptoms. Could you try rephrasing or giving more detail? For example: "I have a sore throat and feel tired."';
+      return '🤔 I couldn\'t quite catch any specific symptoms. Could you try rephrasing or giving more detail? For example: "I have a sore throat and feel tired."';
     }
   
     const primary = matchedSymptoms.slice(0, 3);
-    const compiledResponse = primary.map((symptom, index) => (
-      `📌 *${index + 1}. ${symptom.category} (Severity: ${symptom.severity.toUpperCase()})*\n` +
-      `${symptom.response}\n` +
-      `*Possible related conditions:* ${symptom.relatedConditions.join(', ')}\n`
-    ));
+    const compiledResponse = primary.map((symptom, index) => {
+      const recommendations = symptom.response.split(',').map((rec, i) => `${i + 1}. ${rec.trim()}`);
+      return (
+        `📌 ${index + 1}. ${symptom.category} (Severity: ${symptom.severity.toUpperCase()})\n\n` +
+        `Recommendations:\n${recommendations.join('\n')}\n\n` +
+        `Possible related conditions: ${symptom.relatedConditions.join(', ')}\n`
+      );
+    }).join('\n');
   
     const emotion = detectEmotion(userMessage);
     const reassurance = emotion === 'concerned'
-      ? "\n🙌 I'm here to help. You're not alone, and I’ll do my best to guide you."
+      ? "\n\n🙌 I'm here to help. You're not alone, and I'll do my best to guide you."
       : '';
   
-    return `🩺 Based on what you've shared so far:\n\n${compiledResponse.join('\n')}\n\n💡 If anything worsens or feels severe, please consult a healthcare professional immediately.${reassurance}`;
+    return `🩺 Based on what you've shared:\n\n${compiledResponse}\n\n💡 If anything worsens or feels severe, please consult a healthcare professional immediately.${reassurance}`;
   };
   
   const handleSendMessage = () => {
