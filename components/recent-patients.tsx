@@ -65,45 +65,9 @@ export default function RecentPatients({ isPatientView = false }: RecentPatients
 
   if (isPatientView) {
     return (
-      <div className="space-y-8">
-        <div className="flex items-center">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src="/avatars/01.png" alt="Dr. Sarah Johnson" />
-            <AvatarFallback>DJ</AvatarFallback>
-          </Avatar>
-          <div className="ml-4 space-y-1">
-            <p className="text-sm font-medium leading-none">Dr. Sarah Johnson</p>
-            <p className="text-sm text-muted-foreground">Primary Care Physician</p>
-          </div>
-          <div className="ml-auto font-medium">
-            <Badge variant="secondary">Primary</Badge>
-          </div>
-        </div>
-        <div className="flex items-center">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src="/avatars/02.png" alt="Dr. Michael Chen" />
-            <AvatarFallback>MC</AvatarFallback>
-          </Avatar>
-          <div className="ml-4 space-y-1">
-            <p className="text-sm font-medium leading-none">Dr. Michael Chen</p>
-            <p className="text-sm text-muted-foreground">Cardiologist</p>
-          </div>
-          <div className="ml-auto font-medium">
-            <Badge variant="outline">Specialist</Badge>
-          </div>
-        </div>
-        <div className="flex items-center">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src="/avatars/03.png" alt="Dr. Emily Rodriguez" />
-            <AvatarFallback>ER</AvatarFallback>
-          </Avatar>
-          <div className="ml-4 space-y-1">
-            <p className="text-sm font-medium leading-none">Dr. Emily Rodriguez</p>
-            <p className="text-sm text-muted-foreground">Dermatologist</p>
-          </div>
-          <div className="ml-auto font-medium">
-            <Badge variant="outline">Specialist</Badge>
-          </div>
+      <div className="space-y-4">
+        <div className="flex items-center justify-center py-8">
+          <p className="text-sm text-muted-foreground">No healthcare providers assigned yet</p>
         </div>
       </div>
     )

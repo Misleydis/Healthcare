@@ -63,8 +63,8 @@ export default function DashboardPage() {
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">2</div>
-                    <p className="text-xs text-muted-foreground">Next appointment in 3 days</p>
+                    <div className="text-2xl font-bold">0</div>
+                    <p className="text-xs text-muted-foreground">No upcoming appointments</p>
                   </CardContent>
                 </Card>
                 <Card>
@@ -73,8 +73,8 @@ export default function DashboardPage() {
                     <Pill className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">3</div>
-                    <p className="text-xs text-muted-foreground">2 prescriptions need renewal</p>
+                    <div className="text-2xl font-bold">0</div>
+                    <p className="text-xs text-muted-foreground">No active prescriptions</p>
                   </CardContent>
                 </Card>
                 <Card>
@@ -83,8 +83,8 @@ export default function DashboardPage() {
                     <Stethoscope className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">2</div>
-                    <p className="text-xs text-muted-foreground">Primary care and specialist</p>
+                    <div className="text-2xl font-bold">0</div>
+                    <p className="text-xs text-muted-foreground">No assigned doctors yet</p>
                   </CardContent>
                 </Card>
                 <Card>
@@ -93,8 +93,8 @@ export default function DashboardPage() {
                     <FileText className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">12</div>
-                    <p className="text-xs text-muted-foreground">Last updated 2 days ago</p>
+                    <div className="text-2xl font-bold">0</div>
+                    <p className="text-xs text-muted-foreground">No health records available</p>
                   </CardContent>
                 </Card>
               </>

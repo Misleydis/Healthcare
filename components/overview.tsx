@@ -85,29 +85,29 @@ export default function Overview() {
         <Card>
           <CardHeader>
             <CardTitle>Health Summary</CardTitle>
-            <CardDescription>Your recent health metrics and activities</CardDescription>
+            <CardDescription>Your health metrics will appear here</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <div className="space-y-2">
                 <p className="text-sm font-medium text-muted-foreground">Blood Pressure</p>
-                <p className="text-2xl font-bold">120/80</p>
-                <p className="text-xs text-muted-foreground">Last checked: 2 days ago</p>
+                <p className="text-2xl font-bold">--/--</p>
+                <p className="text-xs text-muted-foreground">Not recorded yet</p>
               </div>
               <div className="space-y-2">
                 <p className="text-sm font-medium text-muted-foreground">Heart Rate</p>
-                <p className="text-2xl font-bold">72 bpm</p>
-                <p className="text-xs text-muted-foreground">Last checked: 2 days ago</p>
+                <p className="text-2xl font-bold">--</p>
+                <p className="text-xs text-muted-foreground">Not recorded yet</p>
               </div>
               <div className="space-y-2">
                 <p className="text-sm font-medium text-muted-foreground">Weight</p>
-                <p className="text-2xl font-bold">68 kg</p>
-                <p className="text-xs text-muted-foreground">Last checked: 1 week ago</p>
+                <p className="text-2xl font-bold">--</p>
+                <p className="text-xs text-muted-foreground">Not recorded yet</p>
               </div>
               <div className="space-y-2">
                 <p className="text-sm font-medium text-muted-foreground">BMI</p>
-                <p className="text-2xl font-bold">22.5</p>
-                <p className="text-xs text-muted-foreground">Last calculated: 1 week ago</p>
+                <p className="text-2xl font-bold">--</p>
+                <p className="text-xs text-muted-foreground">Not calculated yet</p>
               </div>
             </div>
           </CardContent>
@@ -115,31 +115,11 @@ export default function Overview() {
         <Card>
           <CardHeader>
             <CardTitle>Recent Activities</CardTitle>
-            <CardDescription>Your recent healthcare activities</CardDescription>
+            <CardDescription>Your healthcare activities will appear here</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Annual Check-up</p>
-                  <p className="text-xs text-muted-foreground">Completed on March 15, 2024</p>
-                </div>
-                <Badge variant="secondary">Completed</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Blood Test</p>
-                  <p className="text-xs text-muted-foreground">Completed on March 10, 2024</p>
-                </div>
-                <Badge variant="secondary">Completed</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Dental Cleaning</p>
-                  <p className="text-xs text-muted-foreground">Scheduled for April 5, 2024</p>
-                </div>
-                <Badge variant="outline">Upcoming</Badge>
-              </div>
+            <div className="flex items-center justify-center py-8">
+              <p className="text-sm text-muted-foreground">No activities recorded yet</p>
             </div>
           </CardContent>
         </Card>
