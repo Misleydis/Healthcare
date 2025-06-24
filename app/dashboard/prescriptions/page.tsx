@@ -114,12 +114,17 @@ export default function PrescriptionsPage() {
   useEffect(() => {
     // Simulate API call
     const timer = setTimeout(() => {
-      setPrescriptions(generatePrescriptions(15))
+      // For new users, don't generate any prescriptions
+      if (!userData?.createdAt || new Date(userData.createdAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)) {
+        setPrescriptions([])
+      } else {
+        setPrescriptions(generatePrescriptions(15))
+      }
       setLoading(false)
     }, 1500)
 
     return () => clearTimeout(timer)
-  }, [])
+  }, [userData])
 
   // Filter prescriptions based on search term
   const filteredPrescriptions = prescriptions.filter((prescription) => {

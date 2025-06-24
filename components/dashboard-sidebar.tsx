@@ -34,10 +34,22 @@ export function DashboardSidebar() {
       roles: ["admin", "doctor", "nurse", "patient"],
     },
     {
+      title: "Admin Dashboard",
+      href: "/dashboard/admin",
+      icon: Users,
+      roles: ["admin"],
+    },
+    {
       title: "Patients",
       href: "/dashboard/patients",
       icon: Users,
       roles: ["admin", "doctor", "nurse"],
+    },
+    {
+      title: "Doctors",
+      href: "/dashboard/doctors",
+      icon: Stethoscope,
+      roles: ["admin"],
     },
     {
       title: "My Health Records",

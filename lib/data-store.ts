@@ -40,6 +40,7 @@ export type Doctor = {
   availability?: string[]
   createdAt: string
   updatedAt: string
+  patients?: string[] // Array of patient IDs
 }
 
 export type Appointment = {
@@ -120,6 +121,7 @@ export type DataStore = {
   addDoctor: (doctor: Doctor) => void
   updateDoctor: (id: string, doctor: Partial<Doctor>) => void
   deleteDoctor: (id: string) => void
+  addPatientToDoctor: (doctorId: string, patientId: string) => void
 
   // Appointment actions
   addAppointment: (appointment: Appointment) => void
@@ -141,194 +143,69 @@ export type DataStore = {
   markNotificationAsRead: (id: string) => void
   deleteNotification: (id: string) => void
   clearAllNotifications: () => void
+
+  // Store management
+  clearStore: () => void
 }
 
 // Sample data
 const samplePatients: Patient[] = [
   {
-    id: "p1",
+    id: "patient-1",
     name: "John Doe",
-    email: "john.doe@example.com",
-    dateOfBirth: "1985-05-15",
-    gender: "Male",
-    bloodType: "O+",
-    address: "123 Main St, Anytown, USA",
-    phone: "555-123-4567",
-    emergencyContact: "Jane Doe, 555-987-6543",
-    insuranceProvider: "Health Plus",
-    insuranceNumber: "HP12345678",
-    assignedDoctorId: "d1",
-    createdAt: "2023-01-15T08:30:00Z",
-    updatedAt: "2023-01-15T08:30:00Z",
-  },
-  {
-    id: "p2",
-    name: "Jane Smith",
-    email: "jane.smith@example.com",
-    dateOfBirth: "1990-08-22",
-    gender: "Female",
-    bloodType: "A-",
-    address: "456 Oak Ave, Somewhere, USA",
-    phone: "555-234-5678",
-    emergencyContact: "John Smith, 555-876-5432",
-    insuranceProvider: "MediCare Plus",
-    insuranceNumber: "MC87654321",
-    assignedDoctorId: "d2",
-    createdAt: "2023-02-10T10:15:00Z",
-    updatedAt: "2023-02-10T10:15:00Z",
-  },
+    email: "john@example.com",
+    dateOfBirth: "1990-01-01",
+    gender: "male",
+    phone: "+1234567890",
+    address: "123 Main St",
+    emergencyContact: "Jane Doe",
+    insuranceProvider: "HealthCare Plus",
+    insuranceNumber: "INS123456",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
 ]
 
 const sampleDoctors: Doctor[] = [
   {
-    id: "d1",
-    name: "Dr. Sarah Johnson",
-    email: "sarah.johnson@hospital.com",
-    specialization: "Cardiology",
-    department: "Cardiology",
-    phone: "555-111-2222",
-    avatar: "/placeholder.svg?height=100&width=100",
+    id: "doctor-1",
+    name: "Dr. Smith",
+    email: "smith@example.com",
+    specialization: "General Medicine",
+    department: "Primary Care",
+    phone: "+1234567891",
     availability: ["Monday", "Wednesday", "Friday"],
-    createdAt: "2022-12-01T09:00:00Z",
-    updatedAt: "2022-12-01T09:00:00Z",
-  },
-  {
-    id: "d2",
-    name: "Dr. Michael Chen",
-    email: "michael.chen@hospital.com",
-    specialization: "Neurology",
-    department: "Neurology",
-    phone: "555-333-4444",
-    avatar: "/placeholder.svg?height=100&width=100",
-    availability: ["Tuesday", "Thursday", "Saturday"],
-    createdAt: "2022-12-05T11:30:00Z",
-    updatedAt: "2022-12-05T11:30:00Z",
-  },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    patients: ["patient-1"]
+  }
 ]
 
 const sampleAppointments: Appointment[] = [
   {
-    id: "a1",
-    patientId: "p1",
-    doctorId: "d1",
-    date: "2023-06-15",
-    time: "10:00",
+    id: "appointment-1",
+    patientId: "patient-1",
+    doctorId: "doctor-1",
+    date: new Date().toISOString(),
+    time: "09:00",
     duration: 30,
     status: "scheduled",
     type: "in-person",
-    reason: "Annual checkup",
-    notes: "Patient has reported occasional chest pain",
-    followUp: false,
-    createdAt: "2023-05-20T14:30:00Z",
-    updatedAt: "2023-05-20T14:30:00Z",
-  },
-  {
-    id: "a2",
-    patientId: "p2",
-    doctorId: "d2",
-    date: "2023-06-18",
-    time: "14:30",
-    duration: 45,
-    status: "scheduled",
-    type: "telehealth",
-    reason: "Follow-up on medication",
-    notes: "Discuss side effects of new prescription",
-    followUp: true,
-    createdAt: "2023-05-25T09:45:00Z",
-    updatedAt: "2023-05-25T09:45:00Z",
-  },
+    reason: "Regular checkup",
+    notes: "Annual physical examination",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
 ]
 
-const sampleHealthRecords: HealthRecord[] = [
-  {
-    id: "hr1",
-    patientId: "p1",
-    doctorId: "d1",
-    date: "2023-04-10",
-    type: "visit",
-    title: "Annual Physical Examination",
-    description: "Routine physical examination with blood work",
-    diagnosis: "Patient is in good health. Slightly elevated cholesterol.",
-    treatment: "Dietary recommendations provided",
-    medications: ["Lipitor 10mg"],
-    createdAt: "2023-04-10T11:00:00Z",
-    updatedAt: "2023-04-10T11:00:00Z",
-  },
-  {
-    id: "hr2",
-    patientId: "p2",
-    doctorId: "d2",
-    date: "2023-05-05",
-    type: "lab",
-    title: "Blood Test Results",
-    description: "Complete blood count and metabolic panel",
-    diagnosis: "Iron deficiency anemia detected",
-    treatment: "Iron supplements prescribed",
-    medications: ["Ferrous Sulfate 325mg"],
-    createdAt: "2023-05-05T15:30:00Z",
-    updatedAt: "2023-05-05T15:30:00Z",
-  },
-]
+const sampleHealthRecords: HealthRecord[] = []
+const sampleMedications: Medication[] = []
+const sampleNotifications: Notification[] = []
 
-const sampleMedications: Medication[] = [
-  {
-    id: "m1",
-    patientId: "p1",
-    name: "Lipitor",
-    dosage: "10mg",
-    frequency: "daily",
-    time: "20:00",
-    instructions: "Take with evening meal",
-    startDate: "2023-04-15",
-    refillDate: "2023-07-15",
-    refillReminder: true,
-    status: "active",
-    createdAt: "2023-04-10T11:30:00Z",
-    updatedAt: "2023-04-10T11:30:00Z",
-  },
-  {
-    id: "m2",
-    patientId: "p2",
-    name: "Ferrous Sulfate",
-    dosage: "325mg",
-    frequency: "twice-daily",
-    time: "08:00",
-    instructions: "Take on empty stomach with water",
-    startDate: "2023-05-06",
-    endDate: "2023-08-06",
-    refillDate: "2023-06-06",
-    refillReminder: true,
-    status: "active",
-    createdAt: "2023-05-05T16:00:00Z",
-    updatedAt: "2023-05-05T16:00:00Z",
-  },
-]
-
-const sampleNotifications: Notification[] = [
-  {
-    id: "n1",
-    userId: "p1",
-    title: "Appointment Reminder",
-    message: "You have an appointment with Dr. Sarah Johnson tomorrow at 10:00 AM",
-    type: "appointment",
-    read: false,
-    createdAt: "2023-06-14T09:00:00Z",
-  },
-  {
-    id: "n2",
-    userId: "p2",
-    title: "Medication Refill",
-    message: "Your Ferrous Sulfate prescription is due for refill in 3 days",
-    type: "medication",
-    read: false,
-    createdAt: "2023-06-03T14:00:00Z",
-  },
-]
-
-// Create the store
 export const useDataStore = create<DataStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
+      // Initialize with sample data
       patients: samplePatients,
       doctors: sampleDoctors,
       appointments: sampleAppointments,
@@ -341,31 +218,44 @@ export const useDataStore = create<DataStore>()(
         set((state) => ({
           patients: [...state.patients, patient],
         })),
-      updatePatient: (id, updatedPatient) =>
+
+      updatePatient: (id, patient) =>
         set((state) => ({
-          patients: state.patients.map((patient) =>
-            patient.id === id ? { ...patient, ...updatedPatient, updatedAt: new Date().toISOString() } : patient,
-          ),
+          patients: state.patients.map((p) => (p.id === id ? { ...p, ...patient } : p)),
         })),
+
       deletePatient: (id) =>
         set((state) => ({
-          patients: state.patients.filter((patient) => patient.id !== id),
+          patients: state.patients.filter((p) => p.id !== id),
         })),
 
       // Doctor actions
       addDoctor: (doctor) =>
         set((state) => ({
-          doctors: [...state.doctors, doctor],
+          doctors: [...state.doctors, { ...doctor, patients: [] }],
         })),
-      updateDoctor: (id, updatedDoctor) =>
+
+      updateDoctor: (id, doctor) =>
         set((state) => ({
-          doctors: state.doctors.map((doctor) =>
-            doctor.id === id ? { ...doctor, ...updatedDoctor, updatedAt: new Date().toISOString() } : doctor,
-          ),
+          doctors: state.doctors.map((d) => (d.id === id ? { ...d, ...doctor } : d)),
         })),
+
       deleteDoctor: (id) =>
         set((state) => ({
-          doctors: state.doctors.filter((doctor) => doctor.id !== id),
+          doctors: state.doctors.filter((d) => d.id !== id),
+        })),
+
+      addPatientToDoctor: (doctorId, patientId) =>
+        set((state) => ({
+          doctors: state.doctors.map((doctor) => {
+            if (doctor.id === doctorId) {
+              const patients = doctor.patients || []
+              if (!patients.includes(patientId)) {
+                return { ...doctor, patients: [...patients, patientId] }
+              }
+            }
+            return doctor
+          }),
         })),
 
       // Appointment actions
@@ -373,17 +263,15 @@ export const useDataStore = create<DataStore>()(
         set((state) => ({
           appointments: [...state.appointments, appointment],
         })),
-      updateAppointment: (id, updatedAppointment) =>
+
+      updateAppointment: (id, appointment) =>
         set((state) => ({
-          appointments: state.appointments.map((appointment) =>
-            appointment.id === id
-              ? { ...appointment, ...updatedAppointment, updatedAt: new Date().toISOString() }
-              : appointment,
-          ),
+          appointments: state.appointments.map((a) => (a.id === id ? { ...a, ...appointment } : a)),
         })),
+
       deleteAppointment: (id) =>
         set((state) => ({
-          appointments: state.appointments.filter((appointment) => appointment.id !== id),
+          appointments: state.appointments.filter((a) => a.id !== id),
         })),
 
       // Health record actions
@@ -391,15 +279,15 @@ export const useDataStore = create<DataStore>()(
         set((state) => ({
           healthRecords: [...state.healthRecords, record],
         })),
-      updateHealthRecord: (id, updatedRecord) =>
+
+      updateHealthRecord: (id, record) =>
         set((state) => ({
-          healthRecords: state.healthRecords.map((record) =>
-            record.id === id ? { ...record, ...updatedRecord, updatedAt: new Date().toISOString() } : record,
-          ),
+          healthRecords: state.healthRecords.map((r) => (r.id === id ? { ...r, ...record } : r)),
         })),
+
       deleteHealthRecord: (id) =>
         set((state) => ({
-          healthRecords: state.healthRecords.filter((record) => record.id !== id),
+          healthRecords: state.healthRecords.filter((r) => r.id !== id),
         })),
 
       // Medication actions
@@ -407,17 +295,15 @@ export const useDataStore = create<DataStore>()(
         set((state) => ({
           medications: [...state.medications, medication],
         })),
-      updateMedication: (id, updatedMedication) =>
+
+      updateMedication: (id, medication) =>
         set((state) => ({
-          medications: state.medications.map((medication) =>
-            medication.id === id
-              ? { ...medication, ...updatedMedication, updatedAt: new Date().toISOString() }
-              : medication,
-          ),
+          medications: state.medications.map((m) => (m.id === id ? { ...m, ...medication } : m)),
         })),
+
       deleteMedication: (id) =>
         set((state) => ({
-          medications: state.medications.filter((medication) => medication.id !== id),
+          medications: state.medications.filter((m) => m.id !== id),
         })),
 
       // Notification actions
@@ -425,23 +311,43 @@ export const useDataStore = create<DataStore>()(
         set((state) => ({
           notifications: [...state.notifications, notification],
         })),
+
       markNotificationAsRead: (id) =>
         set((state) => ({
-          notifications: state.notifications.map((notification) =>
-            notification.id === id ? { ...notification, read: true } : notification,
-          ),
+          notifications: state.notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
         })),
+
       deleteNotification: (id) =>
         set((state) => ({
-          notifications: state.notifications.filter((notification) => notification.id !== id),
+          notifications: state.notifications.filter((n) => n.id !== id),
         })),
+
       clearAllNotifications: () =>
-        set((state) => ({
+        set(() => ({
+          notifications: [],
+        })),
+
+      // Store management
+      clearStore: () =>
+        set(() => ({
+          patients: [],
+          doctors: [],
+          appointments: [],
+          healthRecords: [],
+          medications: [],
           notifications: [],
         })),
     }),
     {
-      name: "health-app-data",
+      name: "healthcare-data",
+      partialize: (state) => ({
+        patients: state.patients,
+        doctors: state.doctors,
+        appointments: state.appointments,
+        healthRecords: state.healthRecords,
+        medications: state.medications,
+        notifications: state.notifications,
+      }),
     },
   ),
 )

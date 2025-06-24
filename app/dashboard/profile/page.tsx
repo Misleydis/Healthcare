@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
 import { User, Mail, Phone, MapPin, Briefcase, Calendar, Save, Upload, Loader2 } from "lucide-react"
 import useAuthStore from "@/lib/auth-store"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function ProfilePage() {
   const { userData, updateUserData } = useAuthStore()
@@ -83,8 +84,6 @@ export default function ProfilePage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <DashboardHeader />
-
       <main className="flex-1 space-y-4 p-8 pt-6">
         <div className="flex flex-col justify-between space-y-4 md:flex-row md:items-center md:space-y-0">
           <div>
@@ -207,7 +206,69 @@ export default function ProfilePage() {
                       <Briefcase className="mr-1 inline-block h-4 w-4" />
                       Specialty
                     </Label>
-                    <Input id="specialty" name="specialty" value={formData.specialty} onChange={handleInputChange} />
+                    <Select
+                      value={formData.specialty}
+                      onValueChange={(value) => handleInputChange({ target: { name: "specialty", value } } as any)}
+                    >
+                      <SelectTrigger id="specialty">
+                        <SelectValue placeholder={userRole === "nurse" ? "Select your nursing specialty" : "Select your medical specialty"} className="text-muted-foreground data-[state=checked]:text-foreground" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {userRole === "nurse" ? (
+                          <>
+                            <SelectItem value="Pediatric Nurse">Pediatric Nurse</SelectItem>
+                            <SelectItem value="Surgical Nurse">Surgical/Operating Room Nurse</SelectItem>
+                            <SelectItem value="Oncology Nurse">Oncology Nurse</SelectItem>
+                            <SelectItem value="Critical Care Nurse">Critical Care (ICU) Nurse</SelectItem>
+                            <SelectItem value="Emergency Nurse">Emergency/Trauma Nurse</SelectItem>
+                            <SelectItem value="Psychiatric Nurse">Psychiatric Nurse</SelectItem>
+                            <SelectItem value="Cardiac Nurse">Cardiac (Heart) Nurse</SelectItem>
+                            <SelectItem value="Neonatal Nurse">Neonatal Nurse</SelectItem>
+                            <SelectItem value="Geriatric Nurse">Geriatric Nurse</SelectItem>
+                            <SelectItem value="Public Health Nurse">Public Health Nurse</SelectItem>
+                            <SelectItem value="School Nurse">School Nurse</SelectItem>
+                            <SelectItem value="Home Health Nurse">Home Health Nurse</SelectItem>
+                            <SelectItem value="Hospice Nurse">Hospice Nurse</SelectItem>
+                            <SelectItem value="Rehabilitation Nurse">Rehabilitation Nurse</SelectItem>
+                            <SelectItem value="Occupational Health Nurse">Occupational Health Nurse</SelectItem>
+                          </>
+                        ) : (
+                          <>
+                            <SelectItem value="General Practitioner">General Practitioner</SelectItem>
+                            <SelectItem value="Pediatrician">Pediatrician</SelectItem>
+                            <SelectItem value="Cardiologist">Cardiologist</SelectItem>
+                            <SelectItem value="Dermatologist">Dermatologist</SelectItem>
+                            <SelectItem value="Neurologist">Neurologist</SelectItem>
+                            <SelectItem value="Psychiatrist">Psychiatrist</SelectItem>
+                            <SelectItem value="Gynecologist">Gynecologist</SelectItem>
+                            <SelectItem value="Orthopedic Surgeon">Orthopedic Surgeon</SelectItem>
+                            <SelectItem value="Ophthalmologist">Ophthalmologist</SelectItem>
+                            <SelectItem value="ENT Specialist">ENT Specialist</SelectItem>
+                            <SelectItem value="Urologist">Urologist</SelectItem>
+                            <SelectItem value="Gastroenterologist">Gastroenterologist</SelectItem>
+                            <SelectItem value="Endocrinologist">Endocrinologist</SelectItem>
+                            <SelectItem value="Rheumatologist">Rheumatologist</SelectItem>
+                            <SelectItem value="Pulmonologist">Pulmonologist</SelectItem>
+                            <SelectItem value="Infectious Disease Specialist">Infectious Disease Specialist</SelectItem>
+                            <SelectItem value="Oncologist">Oncologist</SelectItem>
+                            <SelectItem value="Nephrologist">Nephrologist</SelectItem>
+                            <SelectItem value="Hematologist">Hematologist</SelectItem>
+                            <SelectItem value="Allergist">Allergist</SelectItem>
+                            <SelectItem value="Geriatrician">Geriatrician</SelectItem>
+                            <SelectItem value="Emergency Medicine">Emergency Medicine</SelectItem>
+                            <SelectItem value="Family Medicine">Family Medicine</SelectItem>
+                            <SelectItem value="Sports Medicine">Sports Medicine</SelectItem>
+                            <SelectItem value="Preventive Medicine">Preventive Medicine</SelectItem>
+                            <SelectItem value="Pain Management">Pain Management</SelectItem>
+                            <SelectItem value="Palliative Care">Palliative Care</SelectItem>
+                            <SelectItem value="Sleep Medicine">Sleep Medicine</SelectItem>
+                            <SelectItem value="Rehabilitation Medicine">Rehabilitation Medicine</SelectItem>
+                            <SelectItem value="Occupational Medicine">Occupational Medicine</SelectItem>
+                            <SelectItem value="Public Health">Public Health</SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
               </div>

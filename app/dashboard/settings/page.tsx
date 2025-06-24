@@ -3,7 +3,6 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -150,8 +149,6 @@ export default function SettingsPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <DashboardHeader />
-
       <main className="flex-1 space-y-4 p-8 pt-6">
         <div className="flex flex-col justify-between space-y-4 md:flex-row md:items-center md:space-y-0">
           <div>

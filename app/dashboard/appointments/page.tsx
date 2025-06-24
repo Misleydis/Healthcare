@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -195,20 +194,45 @@ export default function AppointmentsPage() {
 
     // Create a new appointment
     setTimeout(() => {
+      // First, ensure the patient exists in the data store
+      const { addPatient, addAppointment, addPatientToDoctor } = useDataStore.getState()
+      
+      // Create patient record if it doesn't exist
+      const patientData = {
+        id: userId,
+        name: fullName,
+        email: userData?.email || "",
+        dateOfBirth: userData?.dateOfBirth || new Date().toISOString(),
+        gender: userData?.gender || "unknown",
+        phone: userData?.phone || "",
+        address: userData?.address || "",
+        emergencyContact: userData?.emergencyContact || "",
+        insuranceProvider: userData?.insuranceProvider || "",
+        insuranceNumber: userData?.insuranceNumber || "",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      
+      addPatient(patientData)
+
+      // Then create the appointment
       addAppointment({
-        patientName: fullName,
+        id: `appointment-${Date.now()}`,
         patientId: userId,
-        doctorName: newAppointmentData.doctorName,
         doctorId: newAppointmentData.doctorId,
-        type: newAppointmentData.type,
         date: appointmentDate,
-        formattedDate: format(appointmentDate, "MMMM d, yyyy"),
-        formattedTime: format(appointmentDate, "h:mm a"),
-        status: "Scheduled",
-        location: newAppointmentData.location,
-        notes: newAppointmentData.notes,
+        time: newAppointmentData.time,
         duration: 30,
+        status: "scheduled",
+        type: newAppointmentData.type as "in-person" | "telehealth",
+        reason: newAppointmentData.notes || "Regular checkup",
+        notes: newAppointmentData.notes,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       })
+
+      // Add patient to doctor's profile
+      addPatientToDoctor(newAppointmentData.doctorId, userId)
 
       setIsBookDialogOpen(false)
       setBookingLoading(false)
@@ -240,8 +264,6 @@ export default function AppointmentsPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <DashboardHeader />
-
       <main className="flex-1 space-y-4 p-8 pt-6">
         <div className="flex flex-col justify-between space-y-4 md:flex-row md:items-center md:space-y-0">
           <div>

@@ -1,21 +1,20 @@
 "use client"
 
 import { useState } from "react"
-
-import { Activity, AlertCircle, Loader2 } from "lucide-react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Loader2, AlertCircle, Activity } from "lucide-react"
 import useAuthStore from "@/lib/auth-store"
-import { zodResolver } from "@hookform/resolvers/zod"
+import Link from "next/link"
+import { validateProfessionalId, registerProfessionalId } from "@/lib/professional-id-validator"
 
 const formSchema = z
   .object({
@@ -39,10 +38,32 @@ const formSchema = z
     }),
     specialty: z.string().optional(),
     phoneNumber: z.string().optional(),
+    professionalId: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
+  })
+  .refine((data) => {
+    // Require professional ID for doctors and nurses
+    if (data.role === "doctor" || data.role === "nurse") {
+      return data.professionalId && data.professionalId.trim().length > 0;
+    }
+    return true;
+  }, {
+    message: "Professional ID is required for doctors and nurses",
+    path: ["professionalId"],
+  })
+  .refine((data) => {
+    // Validate professional ID format and check for duplicates
+    if ((data.role === "doctor" || data.role === "nurse") && data.professionalId) {
+      const result = validateProfessionalId(data.professionalId, data.role as "doctor" | "nurse");
+      return result.isValid;
+    }
+    return true;
+  }, {
+    message: "Invalid or duplicate Professional ID",
+    path: ["professionalId"],
   })
 
 export default function RegisterPage() {
@@ -61,6 +82,7 @@ export default function RegisterPage() {
       role: "patient",
       specialty: "",
       phoneNumber: "",
+      professionalId: "",
     },
   })
 
@@ -68,7 +90,7 @@ export default function RegisterPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setAuthError(null)
-    const { email, password, firstName, lastName, role, specialty, phoneNumber } = values
+    const { email, password, firstName, lastName, role, specialty, phoneNumber, professionalId } = values
     const success = await register({
       email,
       password,
@@ -77,9 +99,15 @@ export default function RegisterPage() {
       role,
       specialty,
       phoneNumber,
+      professionalId,
     })
 
     if (success) {
+      // Register the Professional ID in the validator if it's a doctor or nurse
+      if ((role === "doctor" || role === "nurse") && professionalId) {
+        const userId = `${role}-${Date.now()}` // Generate a unique user ID
+        registerProfessionalId(userId, professionalId, role as "doctor" | "nurse")
+      }
       router.push("/dashboard")
     }
   }
@@ -182,8 +210,86 @@ export default function RegisterPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Specialty</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={watchRole === "nurse" ? "Select your nursing specialty" : "Select your medical specialty"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {watchRole === "nurse" ? (
+                            <>
+                              <SelectItem value="Pediatric Nurse">Pediatric Nurse</SelectItem>
+                              <SelectItem value="Surgical Nurse">Surgical/Operating Room Nurse</SelectItem>
+                              <SelectItem value="Oncology Nurse">Oncology Nurse</SelectItem>
+                              <SelectItem value="Critical Care Nurse">Critical Care (ICU) Nurse</SelectItem>
+                              <SelectItem value="Emergency Nurse">Emergency/Trauma Nurse</SelectItem>
+                              <SelectItem value="Psychiatric Nurse">Psychiatric Nurse</SelectItem>
+                              <SelectItem value="Cardiac Nurse">Cardiac (Heart) Nurse</SelectItem>
+                              <SelectItem value="Neonatal Nurse">Neonatal Nurse</SelectItem>
+                              <SelectItem value="Geriatric Nurse">Geriatric Nurse</SelectItem>
+                              <SelectItem value="Public Health Nurse">Public Health Nurse</SelectItem>
+                              <SelectItem value="School Nurse">School Nurse</SelectItem>
+                              <SelectItem value="Home Health Nurse">Home Health Nurse</SelectItem>
+                              <SelectItem value="Hospice Nurse">Hospice Nurse</SelectItem>
+                              <SelectItem value="Rehabilitation Nurse">Rehabilitation Nurse</SelectItem>
+                              <SelectItem value="Occupational Health Nurse">Occupational Health Nurse</SelectItem>
+                            </>
+                          ) : (
+                            <>
+                              <SelectItem value="General Practitioner">General Practitioner</SelectItem>
+                              <SelectItem value="Pediatrician">Pediatrician</SelectItem>
+                              <SelectItem value="Cardiologist">Cardiologist</SelectItem>
+                              <SelectItem value="Dermatologist">Dermatologist</SelectItem>
+                              <SelectItem value="Neurologist">Neurologist</SelectItem>
+                              <SelectItem value="Psychiatrist">Psychiatrist</SelectItem>
+                              <SelectItem value="Gynecologist">Gynecologist</SelectItem>
+                              <SelectItem value="Orthopedic Surgeon">Orthopedic Surgeon</SelectItem>
+                              <SelectItem value="Ophthalmologist">Ophthalmologist</SelectItem>
+                              <SelectItem value="ENT Specialist">ENT Specialist</SelectItem>
+                              <SelectItem value="Urologist">Urologist</SelectItem>
+                              <SelectItem value="Gastroenterologist">Gastroenterologist</SelectItem>
+                              <SelectItem value="Endocrinologist">Endocrinologist</SelectItem>
+                              <SelectItem value="Rheumatologist">Rheumatologist</SelectItem>
+                              <SelectItem value="Pulmonologist">Pulmonologist</SelectItem>
+                              <SelectItem value="Infectious Disease Specialist">Infectious Disease Specialist</SelectItem>
+                              <SelectItem value="Oncologist">Oncologist</SelectItem>
+                              <SelectItem value="Nephrologist">Nephrologist</SelectItem>
+                              <SelectItem value="Hematologist">Hematologist</SelectItem>
+                              <SelectItem value="Allergist">Allergist</SelectItem>
+                              <SelectItem value="Geriatrician">Geriatrician</SelectItem>
+                              <SelectItem value="Emergency Medicine">Emergency Medicine</SelectItem>
+                              <SelectItem value="Family Medicine">Family Medicine</SelectItem>
+                              <SelectItem value="Sports Medicine">Sports Medicine</SelectItem>
+                              <SelectItem value="Preventive Medicine">Preventive Medicine</SelectItem>
+                              <SelectItem value="Pain Management">Pain Management</SelectItem>
+                              <SelectItem value="Palliative Care">Palliative Care</SelectItem>
+                              <SelectItem value="Sleep Medicine">Sleep Medicine</SelectItem>
+                              <SelectItem value="Rehabilitation Medicine">Rehabilitation Medicine</SelectItem>
+                              <SelectItem value="Occupational Medicine">Occupational Medicine</SelectItem>
+                              <SelectItem value="Public Health">Public Health</SelectItem>
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {(watchRole === "doctor" || watchRole === "nurse") && (
+                <FormField
+                  control={form.control}
+                  name="professionalId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Professional ID</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter your specialty" {...field} />
+                        <Input 
+                          placeholder="xxxx"
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

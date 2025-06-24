@@ -139,13 +139,6 @@ export function Overview() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Total Patients</p>
-              <p className="text-2xl font-bold">{userPatients.length}</p>
-              <p className="text-xs text-muted-foreground">
-                {userPatients.length === 0 ? "No patients yet" : "+12% from last month"}
-              </p>
-            </div>
-            <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">Appointments Today</p>
               <p className="text-2xl font-bold">
                 {

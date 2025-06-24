@@ -17,70 +17,10 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
 import useAuthStore from "@/lib/auth-store"
-
-// Mock prescription data
-const mockPrescriptions = [
-  {
-    id: "1",
-    patientName: "John Smith",
-    medication: "Lisinopril",
-    dosage: "10mg",
-    frequency: "Once daily",
-    duration: "30 days",
-    notes: "Take with food",
-    status: "Active",
-    dateIssued: "2023-04-15",
-    refills: 2,
-  },
-  {
-    id: "2",
-    patientName: "Sarah Johnson",
-    medication: "Metformin",
-    dosage: "500mg",
-    frequency: "Twice daily",
-    duration: "90 days",
-    notes: "Take with meals",
-    status: "Active",
-    dateIssued: "2023-04-10",
-    refills: 3,
-  },
-  {
-    id: "3",
-    patientName: "Robert Williams",
-    medication: "Ibuprofen",
-    dosage: "400mg",
-    frequency: "As needed",
-    duration: "7 days",
-    notes: "For pain relief",
-    status: "Expired",
-    dateIssued: "2023-03-28",
-    refills: 0,
-  },
-  {
-    id: "4",
-    patientName: "Emily Davis",
-    medication: "Albuterol",
-    dosage: "90mcg",
-    frequency: "As needed",
-    duration: "30 days",
-    notes: "For asthma attacks",
-    status: "Active",
-    dateIssued: "2023-04-05",
-    refills: 1,
-  },
-]
-
-// Mock patients for dropdown
-const mockPatients = [
-  { id: "1", name: "John Smith" },
-  { id: "2", name: "Sarah Johnson" },
-  { id: "3", name: "Robert Williams" },
-  { id: "4", name: "Emily Davis" },
-  { id: "5", name: "Michael Brown" },
-]
+import { useDataStore } from "@/lib/data-store"
 
 export default function PrescriptionsManagementPage() {
-  const [prescriptions, setPrescriptions] = useState(mockPrescriptions)
+  const [prescriptions, setPrescriptions] = useState([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedPrescription, setSelectedPrescription] = useState(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -88,7 +28,8 @@ export default function PrescriptionsManagementPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
-  const { user } = useAuthStore()
+  const { userData } = useAuthStore()
+  const { patients } = useDataStore()
 
   // Simulate loading
   useEffect(() => {
@@ -169,7 +110,7 @@ export default function PrescriptionsManagementPage() {
   }
 
   // Check if user is a doctor
-  if (user?.role !== "doctor") {
+  if (userData?.role !== "doctor") {
     return (
       <div className="flex h-full items-center justify-center">
         <Card className="w-full max-w-md">
@@ -226,7 +167,7 @@ export default function PrescriptionsManagementPage() {
                     required
                   >
                     <option value="">Select a patient</option>
-                    {mockPatients.map((patient) => (
+                    {patients.map((patient) => (
                       <option key={patient.id} value={patient.name}>
                         {patient.name}
                       </option>

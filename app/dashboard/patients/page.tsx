@@ -20,98 +20,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/components/ui/use-toast"
-import { useAuthStore } from "@/lib/auth-store"
-
-// Mock patient data
-const mockPatients = [
-  {
-    id: "1",
-    name: "John Smith",
-    age: 45,
-    gender: "Male",
-    condition: "Hypertension",
-    lastVisit: "2023-04-15",
-    status: "Active",
-    phone: "(555) 123-4567",
-    email: "john.smith@example.com",
-  },
-  {
-    id: "2",
-    name: "Sarah Johnson",
-    age: 32,
-    gender: "Female",
-    condition: "Diabetes Type 2",
-    lastVisit: "2023-04-10",
-    status: "Active",
-    phone: "(555) 987-6543",
-    email: "sarah.j@example.com",
-  },
-  {
-    id: "3",
-    name: "Robert Williams",
-    age: 58,
-    gender: "Male",
-    condition: "Arthritis",
-    lastVisit: "2023-03-28",
-    status: "Follow-up",
-    phone: "(555) 456-7890",
-    email: "rob.williams@example.com",
-  },
-  {
-    id: "4",
-    name: "Emily Davis",
-    age: 27,
-    gender: "Female",
-    condition: "Asthma",
-    lastVisit: "2023-04-05",
-    status: "New",
-    phone: "(555) 234-5678",
-    email: "emily.d@example.com",
-  },
-  {
-    id: "5",
-    name: "Michael Brown",
-    age: 41,
-    gender: "Male",
-    condition: "Anxiety",
-    lastVisit: "2023-04-12",
-    status: "Active",
-    phone: "(555) 876-5432",
-    email: "michael.b@example.com",
-  },
-]
-
-// Mock appointments data
-const mockAppointments = [
-  {
-    id: "1",
-    patientName: "John Smith",
-    date: "2023-04-20",
-    time: "09:00 AM",
-    type: "Check-up",
-    status: "Scheduled",
-  },
-  {
-    id: "2",
-    patientName: "Sarah Johnson",
-    date: "2023-04-21",
-    time: "10:30 AM",
-    type: "Follow-up",
-    status: "Scheduled",
-  },
-  {
-    id: "3",
-    patientName: "Robert Williams",
-    date: "2023-04-22",
-    time: "02:00 PM",
-    type: "Consultation",
-    status: "Confirmed",
-  },
-]
+import useAuthStore from "@/lib/auth-store"
+import { useDataStore } from "@/lib/data-store"
 
 export default function PatientsPage() {
-  const [patients, setPatients] = useState(mockPatients)
-  const [appointments, setAppointments] = useState(mockAppointments)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedPatient, setSelectedPatient] = useState(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -119,7 +31,8 @@ export default function PatientsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { userData } = useAuthStore()
+  const { patients, addPatient, deletePatient } = useDataStore()
 
   // Simulate loading
   useEffect(() => {
@@ -133,7 +46,7 @@ export default function PatientsPage() {
   const filteredPatients = patients.filter(
     (patient) =>
       patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.condition.toLowerCase().includes(searchTerm.toLowerCase()),
+      patient.condition?.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   // Handle adding a new patient
@@ -150,9 +63,10 @@ export default function PatientsPage() {
       status: "New",
       phone: formData.get("phone"),
       email: formData.get("email"),
+      doctorId: userData?.id,
     }
 
-    setPatients([...patients, newPatient])
+    addPatient(newPatient)
     setIsAddDialogOpen(false)
     toast({
       title: "Patient added",
@@ -164,7 +78,7 @@ export default function PatientsPage() {
   const handleDeletePatient = () => {
     if (!selectedPatient) return
 
-    setPatients(patients.filter((patient) => patient.id !== selectedPatient.id))
+    deletePatient(selectedPatient.id)
     setIsDeleteDialogOpen(false)
     toast({
       title: "Patient removed",
@@ -179,8 +93,8 @@ export default function PatientsPage() {
     router.push(`/dashboard/telehealth?patientId=${patient.id}&patientName=${patient.name}`)
   }
 
-  // Check if user is a doctor
-  if (user?.role !== "doctor") {
+  // Check if user is a medical professional
+  if (!userData || (userData.role !== "doctor" && userData.role !== "admin" && userData.role !== "nurse")) {
     return (
       <div className="flex h-full items-center justify-center">
         <Card className="w-full max-w-md">
@@ -251,6 +165,7 @@ export default function PatientsPage() {
                     className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
                     required
                   >
+                    <option value="">Select gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
@@ -303,7 +218,6 @@ export default function PatientsPage() {
       <Tabs defaultValue="list">
         <TabsList>
           <TabsTrigger value="list">Patient List</TabsTrigger>
-          <TabsTrigger value="appointments">Upcoming Appointments</TabsTrigger>
         </TabsList>
         <TabsContent value="list" className="space-y-4">
           <Card>
@@ -411,61 +325,6 @@ export default function PatientsPage() {
                       </TableRow>
                     ))
                   )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="appointments">
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Patient</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {appointments.map((appointment) => (
-                    <TableRow key={appointment.id}>
-                      <TableCell className="font-medium">{appointment.patientName}</TableCell>
-                      <TableCell>{appointment.date}</TableCell>
-                      <TableCell>{appointment.time}</TableCell>
-                      <TableCell>{appointment.type}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            appointment.status === "Confirmed"
-                              ? "default"
-                              : appointment.status === "Scheduled"
-                                ? "secondary"
-                                : "outline"
-                          }
-                        >
-                          {appointment.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const patientId = patients.find((p) => p.name === appointment.patientName)?.id
-                            router.push(
-                              `/dashboard/telehealth?patientId=${patientId}&patientName=${appointment.patientName}`,
-                            )
-                          }}
-                        >
-                          Start Session
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
                 </TableBody>
               </Table>
             </CardContent>

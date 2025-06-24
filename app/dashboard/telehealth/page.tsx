@@ -17,10 +17,13 @@ export default function TelehealthPage() {
     image: "/placeholder.svg?height=40&width=40",
   })
   const router = useRouter()
-  const { user } = useAuthStore()
-  const isPatient = user?.role === "patient"
+  const { userData } = useAuthStore()
+  const isPatient = userData?.role === "patient"
 
-  const upcomingAppointments = [
+  // Check if user is new (created within last 24 hours)
+  const isNewUser = !userData?.createdAt || new Date(userData.createdAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)
+
+  const upcomingAppointments = isNewUser ? [] : [
     {
       id: "1",
       doctorName: "Sarah Johnson",
@@ -52,7 +55,7 @@ export default function TelehealthPage() {
 
   const patientAppointments = isPatient
     ? upcomingAppointments
-    : [
+    : isNewUser ? [] : [
         {
           id: "1",
           patientName: "John Smith",
@@ -115,37 +118,49 @@ export default function TelehealthPage() {
           {!isPatient && <TabsTrigger value="availability">My Availability</TabsTrigger>}
         </TabsList>
         <TabsContent value="upcoming" className="mt-6">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {patientAppointments.map((appointment) => (
-              <Card key={appointment.id} className="overflow-hidden">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">
-                    {isPatient ? `Dr. ${appointment.doctorName}` : appointment.patientName}
-                  </CardTitle>
-                  <CardDescription>{isPatient ? appointment.specialty : appointment.reason}</CardDescription>
-                </CardHeader>
-                <CardContent className="pb-3">
-                  <div className="flex items-center space-x-2 text-sm">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>{appointment.date}</span>
-                  </div>
-                  <div className="mt-2 flex items-center space-x-2 text-sm">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>{appointment.time}</span>
-                  </div>
-                  <div className="mt-2 flex items-center space-x-2 text-sm">
-                    <Video className="h-4 w-4 text-muted-foreground" />
-                    <span>{appointment.type} Consultation</span>
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-3">
-                  <Button variant="default" className="w-full" onClick={() => handleJoinCall(appointment)}>
-                    Join Call
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+          {patientAppointments.length === 0 ? (
+            <div className="mt-6 rounded-lg border p-8 text-center">
+              <Users className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-semibold">No upcoming consultations</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {isNewUser 
+                  ? "Welcome! You don't have any telehealth consultations scheduled yet. Click the button above to schedule your first consultation."
+                  : "You don't have any upcoming telehealth consultations. Click the button above to schedule a new consultation."}
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {patientAppointments.map((appointment) => (
+                <Card key={appointment.id} className="overflow-hidden">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">
+                      {isPatient ? `Dr. ${appointment.doctorName}` : appointment.patientName}
+                    </CardTitle>
+                    <CardDescription>{isPatient ? appointment.specialty : appointment.reason}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pb-3">
+                    <div className="flex items-center space-x-2 text-sm">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span>{appointment.date}</span>
+                    </div>
+                    <div className="mt-2 flex items-center space-x-2 text-sm">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span>{appointment.time}</span>
+                    </div>
+                    <div className="mt-2 flex items-center space-x-2 text-sm">
+                      <Video className="h-4 w-4 text-muted-foreground" />
+                      <span>{appointment.type} Consultation</span>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="pt-3">
+                    <Button variant="default" className="w-full" onClick={() => handleJoinCall(appointment)}>
+                      Join Call
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
         <TabsContent value="past">
           <div className="mt-6 rounded-lg border p-8 text-center">

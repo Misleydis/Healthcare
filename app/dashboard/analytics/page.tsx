@@ -37,107 +37,144 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts"
-
-// Generate analytics data
-const generateAnalyticsData = () => {
-  return {
-    patientMetrics: {
-      totalPatients: 1284,
-      newPatients: 124,
-      activePatients: 876,
-      inactivePatients: 408,
-      growthRate: 24,
-    },
-    telehealthMetrics: {
-      totalSessions: 432,
-      completedSessions: 398,
-      canceledSessions: 34,
-      averageDuration: 28,
-      growthRate: 18,
-    },
-    treatmentMetrics: {
-      totalTreatments: 892,
-      successfulTreatments: 754,
-      ongoingTreatments: 138,
-      averageRecoveryDays: 12,
-      effectivenessRate: 84,
-    },
-    mlMetrics: {
-      totalRecommendations: 1156,
-      implementedRecommendations: 876,
-      pendingRecommendations: 280,
-      accuracyRate: 92,
-      impactScore: 78,
-    },
-    patientTrends: [
-      { month: "Jan", patients: 980, newRegistrations: 85 },
-      { month: "Feb", patients: 1020, newRegistrations: 92 },
-      { month: "Mar", patients: 1080, newRegistrations: 105 },
-      { month: "Apr", patients: 1150, newRegistrations: 118 },
-      { month: "May", patients: 1210, newRegistrations: 110 },
-      { month: "Jun", patients: 1284, newRegistrations: 124 },
-    ],
-    telehealthTrends: [
-      { month: "Jan", sessions: 310, duration: 25 },
-      { month: "Feb", sessions: 340, duration: 26 },
-      { month: "Mar", sessions: 360, duration: 27 },
-      { month: "Apr", sessions: 390, duration: 27 },
-      { month: "May", sessions: 410, duration: 28 },
-      { month: "Jun", sessions: 432, duration: 28 },
-    ],
-    diseaseDistribution: [
-      { name: "Malaria", value: 35 },
-      { name: "Hypertension", value: 25 },
-      { name: "Diabetes", value: 15 },
-      { name: "Respiratory", value: 12 },
-      { name: "HIV/AIDS", value: 8 },
-      { name: "Other", value: 5 },
-    ],
-    regionalData: [
-      { region: "Bulawayo", patients: 320, sessions: 110, treatments: 215 },
-      { region: "Harare", patients: 420, sessions: 145, treatments: 280 },
-      { region: "Mutare", patients: 180, sessions: 65, treatments: 120 },
-      { region: "Gweru", patients: 150, sessions: 45, treatments: 95 },
-      { region: "Masvingo", patients: 110, sessions: 35, treatments: 85 },
-      { region: "Chinhoyi", patients: 104, sessions: 32, treatments: 97 },
-    ],
-  }
-}
+import { useDataStore } from "@/lib/data-store"
+import useAuthStore from "@/lib/auth-store"
 
 // Colors for charts
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"]
 
 export default function AnalyticsPage() {
-  const [analytics, setAnalytics] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState("6m")
   const [refreshing, setRefreshing] = useState(false)
-
   const { toast } = useToast()
+  const { userData } = useAuthStore()
+  const { patients, appointments, healthRecords } = useDataStore()
+
+  // Calculate analytics from real data
+  const calculateAnalytics = () => {
+    const doctorPatients = patients.filter(p => p.doctorId === userData?.id)
+    const doctorAppointments = appointments.filter(a => a.doctorId === userData?.id)
+    const doctorRecords = healthRecords.filter(r => r.doctorId === userData?.id)
+
+    // Calculate patient metrics
+    const totalPatients = doctorPatients.length
+    const newPatients = doctorPatients.filter(p => {
+      const lastVisit = new Date(p.lastVisit)
+      const now = new Date()
+      const diffTime = Math.abs(now.getTime() - lastVisit.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      return diffDays <= 30
+    }).length
+    const activePatients = doctorPatients.filter(p => p.status === "Active").length
+    const inactivePatients = doctorPatients.filter(p => p.status === "Inactive").length
+
+    // Calculate telehealth metrics
+    const telehealthSessions = doctorAppointments.filter(a => a.type === "Telehealth")
+    const totalSessions = telehealthSessions.length
+    const completedSessions = telehealthSessions.filter(s => s.status === "Completed").length
+    const canceledSessions = telehealthSessions.filter(s => s.status === "Canceled").length
+
+    // Calculate treatment metrics
+    const totalTreatments = doctorRecords.length
+    const successfulTreatments = doctorRecords.filter(r => r.status === "Completed").length
+    const ongoingTreatments = doctorRecords.filter(r => r.status === "In Progress").length
+
+    // Group conditions for disease distribution
+    const conditions = doctorPatients.reduce((acc, patient) => {
+      if (patient.condition) {
+        acc[patient.condition] = (acc[patient.condition] || 0) + 1
+      }
+      return acc
+    }, {})
+
+    const diseaseDistribution = Object.entries(conditions).map(([name, value]) => ({
+      name,
+      value,
+    }))
+
+    // Generate trends data
+    const now = new Date()
+    const months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now)
+      d.setMonth(d.getMonth() - i)
+      return d.toLocaleString('default', { month: 'short' })
+    }).reverse()
+
+    const patientTrends = months.map(month => ({
+      month,
+      patients: doctorPatients.filter(p => {
+        const visitDate = new Date(p.lastVisit)
+        return visitDate.toLocaleString('default', { month: 'short' }) === month
+      }).length,
+      newRegistrations: doctorPatients.filter(p => {
+        const visitDate = new Date(p.lastVisit)
+        return visitDate.toLocaleString('default', { month: 'short' }) === month && p.status === "New"
+      }).length,
+    }))
+
+    const telehealthTrends = months.map(month => ({
+      month,
+      sessions: telehealthSessions.filter(s => {
+        const sessionDate = new Date(s.date)
+        return sessionDate.toLocaleString('default', { month: 'short' }) === month
+      }).length,
+      duration: 30, // Default duration since we don't track this yet
+    }))
+
+    return {
+      patientMetrics: {
+        totalPatients,
+        newPatients,
+        activePatients,
+        inactivePatients,
+        growthRate: newPatients > 0 ? Math.round((newPatients / totalPatients) * 100) : 0,
+      },
+      telehealthMetrics: {
+        totalSessions,
+        completedSessions,
+        canceledSessions,
+        averageDuration: 30,
+        growthRate: totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0,
+      },
+      treatmentMetrics: {
+        totalTreatments,
+        successfulTreatments,
+        ongoingTreatments,
+        averageRecoveryDays: 0,
+        effectivenessRate: totalTreatments > 0 ? Math.round((successfulTreatments / totalTreatments) * 100) : 0,
+      },
+      diseaseDistribution,
+      patientTrends,
+      telehealthTrends,
+    }
+  }
+
+  const [analytics, setAnalytics] = useState<any>(null)
 
   useEffect(() => {
     // Simulate API call
     const timer = setTimeout(() => {
-      setAnalytics(generateAnalyticsData())
+      setAnalytics(calculateAnalytics())
       setLoading(false)
-    }, 2000)
+    }, 1000)
 
     return () => clearTimeout(timer)
-  }, [])
+  }, [patients, appointments, healthRecords, userData])
 
   const handleRefresh = () => {
     setRefreshing(true)
 
     // Simulate refreshing data
     setTimeout(() => {
-      setAnalytics(generateAnalyticsData())
+      setAnalytics(calculateAnalytics())
       setRefreshing(false)
 
       toast({
         title: "Analytics refreshed",
         description: "The latest analytics data has been loaded.",
       })
-    }, 2000)
+    }, 1000)
   }
 
   const handleTimeRangeChange = (value: string) => {
@@ -146,7 +183,7 @@ export default function AnalyticsPage() {
 
     // Simulate loading data for different time ranges
     setTimeout(() => {
-      setAnalytics(generateAnalyticsData())
+      setAnalytics(calculateAnalytics())
       setLoading(false)
 
       toast({
@@ -161,13 +198,11 @@ export default function AnalyticsPage() {
                 : "last year"
         }.`,
       })
-    }, 1500)
+    }, 1000)
   }
 
   return (
     <div className="flex min-h-screen flex-col">
-      <DashboardHeader />
-
       <main className="flex-1 space-y-4 p-8 pt-6">
         <div className="flex flex-col justify-between space-y-4 md:flex-row md:items-center md:space-y-0">
           <div>
@@ -253,25 +288,6 @@ export default function AnalyticsPage() {
                   <>
                     <TrendingUp className="mr-1 h-3.5 w-3.5 text-green-500" />
                     <span className="text-green-500">2.5%</span>
-                    <span className="ml-1">improvement</span>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className={loading ? "animate-pulse" : ""}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">ML Accuracy</CardTitle>
-              <Brain className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{loading ? "..." : `${analytics?.mlMetrics.accuracyRate}%`}</div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                {!loading && (
-                  <>
-                    <TrendingUp className="mr-1 h-3.5 w-3.5 text-green-500" />
-                    <span className="text-green-500">3.2%</span>
                     <span className="ml-1">improvement</span>
                   </>
                 )}

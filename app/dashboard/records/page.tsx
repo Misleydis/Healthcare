@@ -18,7 +18,6 @@ import {
   Upload,
 } from 'lucide-react';
 
-import { DashboardHeader } from '@/components/dashboard-header';
 import {
   Avatar,
   AvatarFallback,
@@ -72,63 +71,27 @@ import useAuthStore from '@/lib/auth-store';
 
 // Generate random patient records
 const generatePatientRecords = (count = 10, isPatient = false, patientName = "") => {
-  const patientNames = [
-    "Tendai Moyo",
-    "Chipo Ncube",
-    "Tatenda Dube",
-    "Farai Sibanda",
-    "Nyasha Mpofu",
-    "Kudzai Ndlovu",
-    "Tafadzwa Mutasa",
-    "Rumbidzai Chigumba",
-    "Simba Makoni",
-    "Vimbai Zimuto",
-  ]
-
-  const recordTypes = [
-    "Medical Examination",
-    "Lab Results",
-    "Prescription",
-    "Vaccination",
-    "Telehealth Consultation",
-    "Diagnosis",
-    "Treatment Plan",
-    "Follow-up",
-  ]
-
-  const diagnoses = [
-    "Malaria",
-    "Hypertension",
-    "Diabetes Type 2",
-    "Respiratory Infection",
-    "Prenatal Care",
-    "Malnutrition",
-    "Typhoid",
-    "HIV Management",
-    "Tuberculosis",
-    "General Checkup",
-  ]
-
-  const doctors = ["Dr. Mutasa", "Dr. Chigumba", "Dr. Ndlovu", "Dr. Makoni", "Dr. Zimuto"]
-
-  // Get current date
   const today = new Date()
+  const recordTypes = ["Medical Examination", "Lab Results", "Prescription", "Vaccination", "Telehealth Consultation"]
+  const diagnoses = ["Hypertension", "Diabetes", "Asthma", "Arthritis", "Migraine", "Common Cold", "Flu", "COVID-19"]
+  const doctors = ["Dr. Smith", "Dr. Johnson", "Dr. Williams", "Dr. Brown", "Dr. Davis"]
+  const patientNames = ["John Doe", "Jane Smith", "Robert Johnson", "Emily Davis", "Michael Wilson"]
 
   return Array.from({ length: count }, (_, i) => {
     // Generate a date within the last 180 days
     const recordDate = new Date(today)
     recordDate.setDate(today.getDate() - Math.floor(Math.random() * 180))
 
-    const patient = patientNames[Math.floor(Math.random() * patientNames.length)]
-    const patientNameValue = isPatient ? patientName : patient
+    // If user is a patient, only generate records for them
+    const patient = isPatient ? patientName : patientNames[Math.floor(Math.random() * patientNames.length)]
     const recordType = recordTypes[Math.floor(Math.random() * recordTypes.length)]
     const diagnosis = diagnoses[Math.floor(Math.random() * diagnoses.length)]
     const doctor = doctors[Math.floor(Math.random() * doctors.length)]
 
     return {
       id: i + 1,
-      patientName: patientNameValue,
-      patientId: `P${1000 + Math.floor(Math.random() * 9000)}`,
+      patientName: patient,
+      patientId: isPatient ? userData?.id : `P${1000 + Math.floor(Math.random() * 9000)}`,
       recordType,
       diagnosis,
       doctor,
@@ -136,7 +99,7 @@ const generatePatientRecords = (count = 10, isPatient = false, patientName = "")
       formattedDate: format(recordDate, "MMM d, yyyy"),
       notes: `Patient presented with symptoms of ${diagnosis.toLowerCase()}. Recommended treatment and follow-up in 2 weeks.`,
       status: Math.random() > 0.3 ? "Complete" : "Pending",
-      initials: patientNameValue
+      initials: patient
         .split(" ")
         .map((n) => n[0])
         .join(""),
@@ -189,12 +152,33 @@ export default function HealthRecordsPage() {
   useEffect(() => {
     // Simulate API call
     const timer = setTimeout(() => {
-      setRecords(generatePatientRecords(30, isPatient, fullName))
+      // For new users, don't generate any records
+      if (!userData?.createdAt || new Date(userData.createdAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)) {
+        setRecords([])
+        setMedicalHistory([])
+      } else {
+        setRecords(generatePatientRecords(30, isPatient, fullName))
+        // Generate some medical history for existing users
+        setMedicalHistory([
+          {
+            id: 1,
+            condition: "Hypertension",
+            treatment: "Lisinopril 10mg daily",
+            notes: "Diagnosed in 2020, well controlled with medication"
+          },
+          {
+            id: 2,
+            condition: "Type 2 Diabetes",
+            treatment: "Metformin 500mg twice daily",
+            notes: "Diagnosed in 2019, monitoring blood sugar levels"
+          }
+        ])
+      }
       setLoading(false)
     }, 1500)
 
     return () => clearTimeout(timer)
-  }, [isPatient, fullName])
+  }, [isPatient, fullName, userData])
 
   // Filter records based on search term and patient ID if the user is a patient
   const filteredRecords = records.filter((record) => {
@@ -343,10 +327,8 @@ export default function HealthRecordsPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <DashboardHeader />
-
       <main className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex flex-col justify-between space-y-4 md:flex-row md:items-center md:space-y-0">
+        <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">{isPatient ? "My Health Records" : "Health Records"}</h2>
             <p className="text-muted-foreground">

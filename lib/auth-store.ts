@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useDataStore } from "./data-store"
 
 interface User {
   id: string
   name: string
   email: string
-  role: "patient" | "doctor" | "nurse"
+  role: "patient" | "doctor" | "nurse" | "admin"
   specialty?: string
   phoneNumber?: string
   address?: string
@@ -13,9 +14,10 @@ interface User {
   bio?: string
   firstName: string
   lastName: string
+  professionalId?: string
 }
 
-type UserRole = "patient" | "doctor" | "nurse"
+type UserRole = "patient" | "doctor" | "nurse" | "admin"
 
 interface AuthState {
   token: string | null
@@ -24,11 +26,12 @@ interface AuthState {
   loading: boolean
   error: string | null
   register: (
-    credentials: Omit<User, "id" | "name"> & { password: string; firstName: string; lastName: string },
+    credentials: Omit<User, "id" | "name"> & { password: string; firstName: string; lastName: string; professionalId?: string },
   ) => Promise<boolean>
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
   updateUserData: (data: Partial<User>) => Promise<boolean>
+  clearError: () => void
 }
 
 const useAuthStore = create<AuthState>()(
@@ -39,6 +42,8 @@ const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       loading: false,
       error: null,
+
+      clearError: () => set({ error: null }),
 
       register: async (credentials) => {
         set({ loading: true, error: null })
@@ -72,6 +77,24 @@ const useAuthStore = create<AuthState>()(
             address: "",
             firstName: credentials.firstName,
             lastName: credentials.lastName,
+            professionalId: credentials.professionalId,
+          }
+
+          // If the user is a doctor, add them to the data store
+          if (data.role === "doctor") {
+            const doctorData = {
+              id: data.userId,
+              name: `${credentials.firstName} ${credentials.lastName}`,
+              email: credentials.email,
+              specialization: credentials.specialty || "General Practitioner",
+              department: "General Medicine",
+              phone: credentials.phoneNumber || "",
+              avatar: "",
+              availability: ["Monday", "Wednesday", "Friday"],
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            }
+            useDataStore.getState().addDoctor(doctorData)
           }
 
           set({
@@ -92,38 +115,81 @@ const useAuthStore = create<AuthState>()(
       },
 
       login: async (email, password) => {
-        set({ loading: true, error: null })
-
         try {
-          const response = await fetch('https://auth-backend-qyna.onrender.com/api/login', {
-            method: 'POST',
+          console.log("Attempting login for email:", email)
+          
+          // Check for default admin credentials
+          if (email === "Admin@123" && password === "Admin123") {
+            const adminUser: User = {
+              id: "admin-1",
+              email: "Admin@123",
+              firstName: "Admin",
+              lastName: "User",
+              name: "Admin User",
+              role: "admin",
+              specialty: "Administration",
+              phoneNumber: "",
+              address: "",
+              bio: "System Administrator",
+              createdAt: new Date().toISOString(),
+              professionalId: "",
+            }
+            set({
+              userData: adminUser,
+              isAuthenticated: true,
+              loading: false,
+              error: null,
+            })
+            return true
+          }
+
+          const response = await fetch("https://auth-backend-qyna.onrender.com/api/login", {
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({ email, password }),
           })
 
-          const data = await response.json()
-
           if (!response.ok) {
-            console.error("Login failed:", data.message)
-            set({ loading: false, error: data.message || "Invalid credentials" })
-            return false
+            throw new Error("Login failed")
           }
 
+          const data = await response.json()
           set({
-            token: data.token,
-            userData: data.user,
+            userData: data,
             isAuthenticated: true,
             loading: false,
+            error: null,
           })
-
-          console.log("Login successful for user:", email)
           return true
-
         } catch (error) {
           console.error("Login error:", error)
-          set({ loading: false, error: "Login failed" })
+          // Fallback to local authentication for development/testing
+          if (email === "test@example.com" && password === "password") {
+            const mockUserData: User = {
+              id: "1",
+              email: "test@example.com",
+              firstName: "Test",
+              lastName: "User",
+              name: "Test User",
+              role: "patient" as const,
+              professionalId: "",
+            }
+            set({
+              userData: mockUserData,
+              isAuthenticated: true,
+              loading: false,
+              error: null,
+            })
+            return true
+          }
+          set({
+            userData: null,
+            isAuthenticated: false,
+            loading: false,
+            error: error instanceof Error ? error.message : "Login failed",
+          })
           return false
         }
       },

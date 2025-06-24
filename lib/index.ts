@@ -6,8 +6,9 @@ import useNotificationStore from "./notification-store"
 import useSettingsStore from "./settings-store"
 import api from "./api"
 
+export default useAuthStore
+
 export {
-  useAuthStore,
   usePatientStore,
   useHealthRecordStore,
   useAppointmentStore,

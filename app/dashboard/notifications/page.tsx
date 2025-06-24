@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Bell, Calendar, FileText, Pill } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import useAuthStore from "@/lib/auth-store"
 import { useToast } from "@/hooks/use-toast"
 
@@ -18,11 +18,16 @@ interface Notification {
 }
 
 export default function NotificationsPage() {
-  const { user } = useAuthStore()
+  const { userData } = useAuthStore()
   const { toast } = useToast()
-  const role = user?.role || "patient"
+  const role = userData?.role || "patient"
   
   const getInitialNotifications = (): Notification[] => {
+    // For new users, return an empty array
+    if (!userData?.createdAt || new Date(userData.createdAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)) {
+      return []
+    }
+
     if (role === "patient") {
       return [
         {
@@ -119,6 +124,7 @@ export default function NotificationsPage() {
         }
       ]
     } else {
+      // Admin notifications
       return [
         {
           id: "1",
@@ -242,4 +248,100 @@ export default function NotificationsPage() {
 
       <Tabs defaultValue="all">
         <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>\
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="unread">Unread</TabsTrigger>
+        </TabsList>
+        <TabsContent value="all" className="space-y-4">
+          {notifications.length === 0 ? (
+            <div className="mt-6 rounded-lg border p-8 text-center">
+              <Bell className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-semibold">No notifications</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {role === "patient" 
+                  ? "Welcome! You don't have any notifications yet. They will appear here when you have appointments, messages, or updates."
+                  : "You don't have any notifications at the moment. They will appear here when you have new updates."}
+              </p>
+            </div>
+          ) : (
+            notifications.map((notification) => (
+              <div
+                key={notification.id}
+                className={`p-4 rounded-lg border ${
+                  notification.read ? "bg-background" : "bg-muted"
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  {getNotificationIcon(notification.type)}
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-medium">{notification.title}</h3>
+                      <span className="text-sm text-muted-foreground">
+                        {notification.time}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {notification.description}
+                    </p>
+                    {notification.action && (
+                      <Button
+                        variant="link"
+                        className="mt-2 p-0 h-auto"
+                        onClick={() => handleAction(notification)}
+                      >
+                        {notification.action}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </TabsContent>
+        <TabsContent value="unread" className="space-y-4">
+          {notifications.filter((n) => !n.read).length === 0 ? (
+            <div className="mt-6 rounded-lg border p-8 text-center">
+              <Bell className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-semibold">No unread notifications</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                You don't have any unread notifications at the moment.
+              </p>
+            </div>
+          ) : (
+            notifications
+              .filter((n) => !n.read)
+              .map((notification) => (
+                <div
+                  key={notification.id}
+                  className="p-4 rounded-lg border bg-muted"
+                >
+                  <div className="flex items-start gap-4">
+                    {getNotificationIcon(notification.type)}
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-medium">{notification.title}</h3>
+                        <span className="text-sm text-muted-foreground">
+                          {notification.time}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {notification.description}
+                      </p>
+                      {notification.action && (
+                        <Button
+                          variant="link"
+                          className="mt-2 p-0 h-auto"
+                          onClick={() => handleAction(notification)}
+                        >
+                          {notification.action}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}

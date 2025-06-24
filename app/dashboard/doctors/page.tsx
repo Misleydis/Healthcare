@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -20,7 +19,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/components/ui/use-toast"
-import { Search, Plus, Calendar, Video, MessageSquare, Star, MapPin, Clock, User } from "lucide-react"
+import { Search, Plus, Calendar, Video, MessageSquare, Star, MapPin, Clock, User, Trash2, Edit, Stethoscope } from "lucide-react"
 import Link from "next/link"
 import useAuthStore from "@/lib/auth-store"
 import { useDataStore, type Doctor } from "@/lib/data-store"
@@ -49,13 +48,12 @@ export default function DoctorsPage() {
   const [isConnecting, setIsConnecting] = useState(false)
   const [isAddDoctorDialogOpen, setIsAddDoctorDialogOpen] = useState(false)
   const [newDoctorData, setNewDoctorData] = useState({
-    name: "",
-    specialty: "",
-    location: "",
+    firstName: "",
+    lastName: "",
     email: "",
+    specialty: "",
     phone: "",
-    bio: "",
-    experience: 0,
+    department: "",
   })
 
   const { toast } = useToast()
@@ -71,10 +69,11 @@ export default function DoctorsPage() {
 
   // Filter doctors based on search term
   const filteredDoctors = doctors.filter((doctor) => {
+    if (searchTerm === "all") return true;
     return (
       doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doctor.specialty.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doctor.location.toLowerCase().includes(searchTerm.toLowerCase())
+      doctor.specialization.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doctor.department.toLowerCase().includes(searchTerm.toLowerCase())
     )
   })
 
@@ -142,46 +141,39 @@ export default function DoctorsPage() {
   }
 
   const handleAddDoctor = () => {
-    setIsAddDoctorDialogOpen(true)
-  }
-
-  const confirmAddDoctor = () => {
-    const firstName = newDoctorData.name.split(" ")[0] || ""
-    const lastName = newDoctorData.name.split(" ")[1] || ""
-
-    const doctorData: Omit<Doctor, "id"> = {
-      name: newDoctorData.name,
-      specialty: newDoctorData.specialty,
-      location: newDoctorData.location,
-      rating: 4.5, // Default rating
-      experience: newDoctorData.experience,
-      email: newDoctorData.email,
-      phone: newDoctorData.phone,
-      bio: newDoctorData.bio,
-      availability: ["Monday", "Wednesday", "Friday"],
-      availableTimes: ["9:00 AM - 12:00 PM", "2:00 PM - 5:00 PM"],
-      isMyDoctor: false,
-      lastVisit: null,
-      nextAppointment: null,
-      initials: `${firstName[0] || ""}${lastName[0] || ""}`,
+    if (!newDoctorData.firstName || !newDoctorData.lastName || !newDoctorData.email) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      })
+      return
     }
 
-    addDoctor(doctorData)
+    addDoctor({
+      id: `doctor-${Date.now()}`,
+      name: `${newDoctorData.firstName} ${newDoctorData.lastName}`,
+      email: newDoctorData.email,
+      specialization: newDoctorData.specialty,
+      department: newDoctorData.department,
+      phone: newDoctorData.phone,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
 
     setIsAddDoctorDialogOpen(false)
     setNewDoctorData({
-      name: "",
-      specialty: "",
-      location: "",
+      firstName: "",
+      lastName: "",
       email: "",
+      specialty: "",
       phone: "",
-      bio: "",
-      experience: 0,
+      department: "",
     })
 
     toast({
       title: "Doctor added",
-      description: `${newDoctorData.name} has been added to the system.`,
+      description: "Doctor has been successfully added to the system.",
     })
   }
 
@@ -194,565 +186,316 @@ export default function DoctorsPage() {
     })
   }
 
+  const handleDeleteDoctor = (doctorId: string) => {
+    deleteDoctor(doctorId)
+    toast({
+      title: "Doctor deleted",
+      description: "The doctor has been successfully removed from the system.",
+    })
+  }
+
+  // Check if user is admin
+  if (userData?.role !== "admin") {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center">Access Denied</CardTitle>
+            <CardDescription className="text-center">
+              You don't have permission to access this page.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
-      <DashboardHeader />
-
       <main className="flex-1 space-y-4 p-8 pt-6">
         <div className="flex flex-col justify-between space-y-4 md:flex-row md:items-center md:space-y-0">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">My Doctors</h2>
-            <p className="text-muted-foreground">View and connect with your healthcare providers</p>
+            <h2 className="text-3xl font-bold tracking-tight">Doctors Management</h2>
+            <p className="text-muted-foreground">Manage healthcare providers and their specialties</p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative w-full md:w-auto">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search doctors..."
-                className="w-full pl-8 md:w-[300px]"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            {isAdmin && (
-              <Button onClick={handleAddDoctor}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Doctor
-              </Button>
-            )}
-          </div>
+          <Button onClick={() => setIsAddDoctorDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Healthcare Provider
+          </Button>
         </div>
 
-        <Tabs defaultValue="my-doctors" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="my-doctors">My Doctors ({myDoctors.length})</TabsTrigger>
-            <TabsTrigger value="all-doctors">All Doctors</TabsTrigger>
-            <TabsTrigger value="specialists">Specialists</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="my-doctors" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {loading ? (
-                <>
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <Card key={i} className="overflow-hidden">
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center gap-4">
-                          <Skeleton className="h-12 w-12 rounded-full" />
-                          <div>
-                            <Skeleton className="h-5 w-32" />
-                            <Skeleton className="mt-1 h-4 w-24" />
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="mt-2 h-4 w-3/4" />
-                      </CardContent>
-                      <CardFooter>
-                        <Skeleton className="h-9 w-full" />
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </>
-              ) : myDoctors.length === 0 ? (
-                <div className="col-span-full flex h-40 flex-col items-center justify-center space-y-3">
-                  <User className="h-10 w-10 text-muted-foreground" />
-                  <p className="text-center text-muted-foreground">You don't have any assigned doctors yet.</p>
-                  <p className="text-center text-sm text-muted-foreground">
-                    Visit the "All Doctors" tab to find and assign a doctor.
+        <Card>
+          <CardHeader>
+            <CardTitle>Healthcare Providers</CardTitle>
+            <CardDescription>Manage doctors and their specialties</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {doctors.length === 0 ? (
+                <div className="text-center py-8">
+                  <Stethoscope className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <h3 className="mt-2 text-sm font-semibold">No doctors yet</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Get started by adding your first healthcare provider.
                   </p>
                 </div>
               ) : (
-                <>
-                  {myDoctors.map((doctor) => (
-                    <Card key={doctor.id} className="overflow-hidden">
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center gap-4">
-                          <Avatar className="h-12 w-12">
-                            <AvatarImage src={`/placeholder.svg?height=48&width=48&text=${doctor.initials}`} />
-                            <AvatarFallback>{doctor.initials}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <CardTitle className="text-base">{doctor.name}</CardTitle>
-                            <CardDescription>{doctor.specialty}</CardDescription>
-                          </div>
+                doctors.map((doctor) => (
+                  <Card key={doctor.id}>
+                    <div className="flex items-center justify-between p-4">
+                      <div className="flex items-center space-x-4">
+                        <Avatar>
+                          <AvatarImage src={doctor.avatar} />
+                          <AvatarFallback>{doctor.name.split(" ").map((n) => n[0]).join("")}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h4 className="font-medium">{doctor.name}</h4>
+                          <p className="text-sm text-muted-foreground">{doctor.specialization}</p>
+                          <p className="text-xs text-muted-foreground">{doctor.email}</p>
                         </div>
-                      </CardHeader>
-                      <CardContent className="pb-2">
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <span>{doctor.location}</span>
-                          </div>
-                          {doctor.lastVisit && (
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span>Last visit: {doctor.lastVisit}</span>
-                            </div>
-                          )}
-                          {doctor.nextAppointment && (
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              <span>Next appointment: {doctor.nextAppointment}</span>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                      <CardFooter className="flex gap-2">
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="outline">{doctor.department}</Badge>
+                        <Button variant="ghost" size="icon">
+                          <Edit className="h-4 w-4" />
+                        </Button>
                         <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleMessageDoctor(doctor)}
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteDoctor(doctor.id)}
                         >
-                          <MessageSquare className="mr-2 h-4 w-4" />
-                          Message
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                        <Button size="sm" className="flex-1" onClick={() => initiateVideoCall(doctor)}>
-                          <Video className="mr-2 h-4 w-4" />
-                          Video Call
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </>
+                      </div>
+                    </div>
+                  </Card>
+                ))
               )}
             </div>
-          </TabsContent>
+          </CardContent>
+        </Card>
+      </main>
 
-          <TabsContent value="all-doctors" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {loading ? (
-                <>
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <Card key={i} className="overflow-hidden">
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center gap-4">
-                          <Skeleton className="h-12 w-12 rounded-full" />
-                          <div>
-                            <Skeleton className="h-5 w-32" />
-                            <Skeleton className="mt-1 h-4 w-24" />
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="mt-2 h-4 w-3/4" />
-                      </CardContent>
-                      <CardFooter>
-                        <Skeleton className="h-9 w-full" />
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </>
-              ) : filteredDoctors.length === 0 ? (
-                <div className="col-span-full flex h-40 flex-col items-center justify-center space-y-3">
-                  <User className="h-10 w-10 text-muted-foreground" />
-                  <p className="text-center text-muted-foreground">No doctors found matching your search.</p>
-                  {isAdmin && (
-                    <Button onClick={handleAddDoctor} variant="outline">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Doctor
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <>
-                  {filteredDoctors.map((doctor) => (
-                    <Card key={doctor.id} className="overflow-hidden">
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center gap-4">
-                          <Avatar className="h-12 w-12">
-                            <AvatarImage src={`/placeholder.svg?height=48&width=48&text=${doctor.initials}`} />
-                            <AvatarFallback>{doctor.initials}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <CardTitle className="text-base">{doctor.name}</CardTitle>
-                            <CardDescription>{doctor.specialty}</CardDescription>
-                          </div>
-                          {doctor.isMyDoctor && (
-                            <Badge className="ml-auto bg-emerald-500 hover:bg-emerald-600">My Doctor</Badge>
-                          )}
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pb-2">
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <span>{doctor.location}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Star className="h-4 w-4 text-amber-500" />
-                            <span>
-                              {doctor.rating} • {doctor.experience} years experience
-                            </span>
-                          </div>
-                        </div>
-                      </CardContent>
-                      <CardFooter className="flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1" onClick={() => handleViewDoctor(doctor)}>
-                          View Profile
-                        </Button>
-                        {isPatient && !doctor.isMyDoctor ? (
-                          <Button size="sm" className="flex-1" onClick={() => handleSetAsMyDoctor(doctor)}>
-                            <User className="mr-2 h-4 w-4" />
-                            Set as My Doctor
-                          </Button>
-                        ) : (
-                          <Button size="sm" className="flex-1" asChild>
-                            <Link href="/dashboard/appointments">
-                              <Calendar className="mr-2 h-4 w-4" />
-                              Book
-                            </Link>
-                          </Button>
-                        )}
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="specialists" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {loading ? (
-                <>
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <Card key={i} className="overflow-hidden">
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center gap-4">
-                          <Skeleton className="h-12 w-12 rounded-full" />
-                          <div>
-                            <Skeleton className="h-5 w-32" />
-                            <Skeleton className="mt-1 h-4 w-24" />
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="mt-2 h-4 w-3/4" />
-                      </CardContent>
-                      <CardFooter>
-                        <Skeleton className="h-9 w-full" />
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </>
-              ) : (
-                <>
-                  {filteredDoctors
-                    .filter(
-                      (doctor) => doctor.specialty !== "General Practitioner" && !doctor.specialty.includes("General"),
-                    )
-                    .map((doctor) => (
-                      <Card key={doctor.id} className="overflow-hidden">
-                        <CardHeader className="pb-2">
-                          <div className="flex items-center gap-4">
-                            <Avatar className="h-12 w-12">
-                              <AvatarImage src={`/placeholder.svg?height=48&width=48&text=${doctor.initials}`} />
-                              <AvatarFallback>{doctor.initials}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <CardTitle className="text-base">{doctor.name}</CardTitle>
-                              <CardDescription>{doctor.specialty}</CardDescription>
-                            </div>
-                            {doctor.isMyDoctor && (
-                              <Badge className="ml-auto bg-emerald-500 hover:bg-emerald-600">My Doctor</Badge>
-                            )}
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pb-2">
-                          <div className="space-y-2 text-sm">
-                            <div className="flex items-center gap-2">
-                              <MapPin className="h-4 w-4 text-muted-foreground" />
-                              <span>{doctor.location}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Star className="h-4 w-4 text-amber-500" />
-                              <span>
-                                {doctor.rating} • {doctor.experience} years experience
-                              </span>
-                            </div>
-                          </div>
-                        </CardContent>
-                        <CardFooter className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => handleViewDoctor(doctor)}
-                          >
-                            View Profile
-                          </Button>
-                          {isPatient && !doctor.isMyDoctor ? (
-                            <Button size="sm" className="flex-1" onClick={() => handleSetAsMyDoctor(doctor)}>
-                              <User className="mr-2 h-4 w-4" />
-                              Set as My Doctor
-                            </Button>
-                          ) : (
-                            <Button size="sm" className="flex-1" asChild>
-                              <Link href="/dashboard/appointments">
-                                <Calendar className="mr-2 h-4 w-4" />
-                                Book
-                              </Link>
-                            </Button>
-                          )}
-                        </CardFooter>
-                      </Card>
-                    ))}
-                </>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>{selectedDoctor?.name}</DialogTitle>
-              <DialogDescription>
-                {selectedDoctor?.specialty} at {selectedDoctor?.location}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="divide-y divide-border">
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
-                    Full Name
-                  </Label>
-                  <Input type="text" id="name" value={selectedDoctor?.name} className="col-span-3" disabled />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="email" className="text-right">
-                    Email
-                  </Label>
-                  <Input type="email" id="email" value={selectedDoctor?.email} className="col-span-3" disabled />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="phone" className="text-right">
-                    Phone
-                  </Label>
-                  <Input type="tel" id="phone" value={selectedDoctor?.phone} className="col-span-3" disabled />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="bio" className="text-right">
-                    Bio
-                  </Label>
-                  <Textarea id="bio" value={selectedDoctor?.bio} className="col-span-3" disabled />
-                </div>
+      <Dialog open={isAddDoctorDialogOpen} onOpenChange={setIsAddDoctorDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add Healthcare Provider</DialogTitle>
+            <DialogDescription>Add a new doctor to the system</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name *</Label>
+                <Input
+                  id="firstName"
+                  value={newDoctorData.firstName}
+                  onChange={(e) => setNewDoctorData({ ...newDoctorData, firstName: e.target.value })}
+                />
               </div>
-            </div>
-
-            <DialogFooter>
-              <Button type="button" onClick={() => setIsViewDialogOpen(false)}>
-                Close
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Send Message to {selectedDoctor?.name}</DialogTitle>
-              <DialogDescription>Write your message below to contact {selectedDoctor?.name}.</DialogDescription>
-            </DialogHeader>
-
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="message" className="text-right">
-                  Message
-                </Label>
-                <Textarea
-                  id="message"
-                  className="col-span-3"
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name *</Label>
+                <Input
+                  id="lastName"
+                  value={newDoctorData.lastName}
+                  onChange={(e) => setNewDoctorData({ ...newDoctorData, lastName: e.target.value })}
                 />
               </div>
             </div>
-
-            <DialogFooter>
-              <Button type="button" variant="secondary" onClick={() => setIsMessageDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="button" onClick={sendMessage} disabled={messageSending}>
-                {messageSending ? <>Sending...</> : "Send Message"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={showVideoCallDialog} onOpenChange={setShowVideoCallDialog}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Initiate Video Call with {selectedDoctor?.name}</DialogTitle>
-              <DialogDescription>Confirm to start a video call with {selectedDoctor?.name}.</DialogDescription>
-            </DialogHeader>
-
-            <div className="grid gap-4 py-4">
-              {cameraPermission === false || micPermission === false ? (
-                <div className="rounded-md border border-destructive/20 bg-destructive/10 p-4 text-sm">
-                  <p className="font-medium">Permissions Required</p>
-                  <p>
-                    Please enable camera and microphone permissions in your browser settings to proceed with the video
-                    call.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {cameraPermission === null || micPermission === null ? (
-                    <p>Requesting camera and microphone permissions...</p>
-                  ) : (
-                    <p>Ready to connect with {selectedDoctor?.name} via video call?</p>
-                  )}
-                </>
-              )}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={newDoctorData.email}
+                onChange={(e) => setNewDoctorData({ ...newDoctorData, email: e.target.value })}
+              />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="specialty">Specialty</Label>
+              <Select onValueChange={(value) => setNewDoctorData({ ...newDoctorData, specialty: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select specialty" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="General Practitioner">General Practitioner</SelectItem>
+                  <SelectItem value="Pediatrician">Pediatrician</SelectItem>
+                  <SelectItem value="Cardiologist">Cardiologist</SelectItem>
+                  <SelectItem value="Dermatologist">Dermatologist</SelectItem>
+                  <SelectItem value="Neurologist">Neurologist</SelectItem>
+                  <SelectItem value="Psychiatrist">Psychiatrist</SelectItem>
+                  <SelectItem value="Gynecologist">Gynecologist</SelectItem>
+                  <SelectItem value="Orthopedic Surgeon">Orthopedic Surgeon</SelectItem>
+                  <SelectItem value="Ophthalmologist">Ophthalmologist</SelectItem>
+                  <SelectItem value="ENT Specialist">ENT Specialist</SelectItem>
+                  <SelectItem value="Urologist">Urologist</SelectItem>
+                  <SelectItem value="Gastroenterologist">Gastroenterologist</SelectItem>
+                  <SelectItem value="Endocrinologist">Endocrinologist</SelectItem>
+                  <SelectItem value="Rheumatologist">Rheumatologist</SelectItem>
+                  <SelectItem value="Pulmonologist">Pulmonologist</SelectItem>
+                  <SelectItem value="Infectious Disease Specialist">Infectious Disease Specialist</SelectItem>
+                  <SelectItem value="Oncologist">Oncologist</SelectItem>
+                  <SelectItem value="Nephrologist">Nephrologist</SelectItem>
+                  <SelectItem value="Hematologist">Hematologist</SelectItem>
+                  <SelectItem value="Allergist">Allergist</SelectItem>
+                  <SelectItem value="Geriatrician">Geriatrician</SelectItem>
+                  <SelectItem value="Emergency Medicine">Emergency Medicine</SelectItem>
+                  <SelectItem value="Family Medicine">Family Medicine</SelectItem>
+                  <SelectItem value="Sports Medicine">Sports Medicine</SelectItem>
+                  <SelectItem value="Preventive Medicine">Preventive Medicine</SelectItem>
+                  <SelectItem value="Pain Management">Pain Management</SelectItem>
+                  <SelectItem value="Palliative Care">Palliative Care</SelectItem>
+                  <SelectItem value="Sleep Medicine">Sleep Medicine</SelectItem>
+                  <SelectItem value="Rehabilitation Medicine">Rehabilitation Medicine</SelectItem>
+                  <SelectItem value="Occupational Medicine">Occupational Medicine</SelectItem>
+                  <SelectItem value="Public Health">Public Health</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <Input
+                id="department"
+                value={newDoctorData.department}
+                onChange={(e) => setNewDoctorData({ ...newDoctorData, department: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                value={newDoctorData.phone}
+                onChange={(e) => setNewDoctorData({ ...newDoctorData, phone: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddDoctorDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddDoctor}>Add Provider</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-            <DialogFooter>
-              <Button type="button" variant="secondary" onClick={() => setShowVideoCallDialog(false)}>
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                onClick={startVideoCall}
-                disabled={isConnecting || cameraPermission === false || micPermission === false}
-              >
-                {isConnecting ? <>Connecting...</> : "Start Video Call"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{selectedDoctor?.name}</DialogTitle>
+            <DialogDescription>
+              {selectedDoctor?.specialty} at {selectedDoctor?.location}
+            </DialogDescription>
+          </DialogHeader>
 
-        <Dialog open={isAddDoctorDialogOpen} onOpenChange={setIsAddDoctorDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Add New Doctor</DialogTitle>
-              <DialogDescription>Enter the details to add a new doctor to the system</DialogDescription>
-            </DialogHeader>
-
+          <div className="divide-y divide-border">
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="doctorName" className="text-right">
+                <Label htmlFor="name" className="text-right">
                   Full Name
                 </Label>
-                <Input
-                  id="doctorName"
-                  value={newDoctorData.name}
-                  onChange={(e) => setNewDoctorData({ ...newDoctorData, name: e.target.value })}
-                  className="col-span-3"
-                />
+                <Input type="text" id="name" value={selectedDoctor?.name} className="col-span-3" disabled />
               </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="specialty" className="text-right">
-                  Specialty
-                </Label>
-                <Select
-                  value={newDoctorData.specialty}
-                  onValueChange={(value) => setNewDoctorData({ ...newDoctorData, specialty: value })}
-                >
-                  <SelectTrigger id="specialty" className="col-span-3">
-                    <SelectValue placeholder="Select specialty" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="General Practitioner">General Practitioner</SelectItem>
-                    <SelectItem value="Pediatrician">Pediatrician</SelectItem>
-                    <SelectItem value="Cardiologist">Cardiologist</SelectItem>
-                    <SelectItem value="Dermatologist">Dermatologist</SelectItem>
-                    <SelectItem value="Neurologist">Neurologist</SelectItem>
-                    <SelectItem value="Psychiatrist">Psychiatrist</SelectItem>
-                    <SelectItem value="Gynecologist">Gynecologist</SelectItem>
-                    <SelectItem value="Orthopedic Surgeon">Orthopedic Surgeon</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="location" className="text-right">
-                  Location
-                </Label>
-                <Input
-                  id="location"
-                  value={newDoctorData.location}
-                  onChange={(e) => setNewDoctorData({ ...newDoctorData, location: e.target.value })}
-                  className="col-span-3"
-                />
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="experience" className="text-right">
-                  Experience (years)
-                </Label>
-                <Input
-                  id="experience"
-                  type="number"
-                  value={newDoctorData.experience.toString()}
-                  onChange={(e) =>
-                    setNewDoctorData({ ...newDoctorData, experience: Number.parseInt(e.target.value) || 0 })
-                  }
-                  className="col-span-3"
-                />
-              </div>
-
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="email" className="text-right">
                   Email
                 </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newDoctorData.email}
-                  onChange={(e) => setNewDoctorData({ ...newDoctorData, email: e.target.value })}
-                  className="col-span-3"
-                />
+                <Input type="email" id="email" value={selectedDoctor?.email} className="col-span-3" disabled />
               </div>
-
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="phone" className="text-right">
                   Phone
                 </Label>
-                <Input
-                  id="phone"
-                  value={newDoctorData.phone}
-                  onChange={(e) => setNewDoctorData({ ...newDoctorData, phone: e.target.value })}
-                  className="col-span-3"
-                />
+                <Input type="tel" id="phone" value={selectedDoctor?.phone} className="col-span-3" disabled />
               </div>
-
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="bio" className="text-right">
                   Bio
                 </Label>
-                <Textarea
-                  id="bio"
-                  value={newDoctorData.bio}
-                  onChange={(e) => setNewDoctorData({ ...newDoctorData, bio: e.target.value })}
-                  className="col-span-3"
-                />
+                <Textarea id="bio" value={selectedDoctor?.bio} className="col-span-3" disabled />
               </div>
             </div>
+          </div>
 
-            <DialogFooter>
-              <Button type="button" variant="secondary" onClick={() => setIsAddDoctorDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                onClick={confirmAddDoctor}
-                disabled={!newDoctorData.name || !newDoctorData.specialty}
-              >
-                Add Doctor
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </main>
+          <DialogFooter>
+            <Button type="button" onClick={() => setIsViewDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Send Message to {selectedDoctor?.name}</DialogTitle>
+            <DialogDescription>Write your message below to contact {selectedDoctor?.name}.</DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="message" className="text-right">
+                Message
+              </Label>
+              <Textarea
+                id="message"
+                className="col-span-3"
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="secondary" onClick={() => setIsMessageDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={sendMessage} disabled={messageSending}>
+              {messageSending ? <>Sending...</> : "Send Message"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showVideoCallDialog} onOpenChange={setShowVideoCallDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Initiate Video Call with {selectedDoctor?.name}</DialogTitle>
+            <DialogDescription>Confirm to start a video call with {selectedDoctor?.name}.</DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            {cameraPermission === false || micPermission === false ? (
+              <div className="rounded-md border border-destructive/20 bg-destructive/10 p-4 text-sm">
+                <p className="font-medium">Permissions Required</p>
+                <p>
+                  Please enable camera and microphone permissions in your browser settings to proceed with the video
+                  call.
+                </p>
+              </div>
+            ) : (
+              <>
+                {cameraPermission === null || micPermission === null ? (
+                  <p>Requesting camera and microphone permissions...</p>
+                ) : (
+                  <p>Ready to connect with {selectedDoctor?.name} via video call?</p>
+                )}
+              </>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="secondary" onClick={() => setShowVideoCallDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={startVideoCall}
+              disabled={isConnecting || cameraPermission === false || micPermission === false}
+            >
+              {isConnecting ? <>Connecting...</> : "Start Video Call"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
