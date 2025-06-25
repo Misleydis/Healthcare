@@ -194,7 +194,7 @@ export default function DoctorsPage() {
     })
   }
 
-  // If patient, show only their assigned doctors
+  // If patient, show all doctors for browsing/choosing
   if (isPatient) {
     return (
       <div className="flex min-h-screen flex-col">
@@ -202,41 +202,57 @@ export default function DoctorsPage() {
           <div className="flex flex-col justify-between space-y-4 md:flex-row md:items-center md:space-y-0">
             <div>
               <h2 className="text-3xl font-bold tracking-tight">My Doctor</h2>
-              <p className="text-muted-foreground">View your assigned healthcare provider(s)</p>
+              <p className="text-muted-foreground">Browse and choose your healthcare provider</p>
             </div>
           </div>
-
+          <div className="mb-4">
+            <Input
+              placeholder="Search doctors by name, specialty, or department..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="max-w-md"
+            />
+          </div>
           <Card>
             <CardHeader>
-              <CardTitle>Assigned Doctor(s)</CardTitle>
-              <CardDescription>Your current healthcare provider(s)</CardDescription>
+              <CardTitle>All Doctors</CardTitle>
+              <CardDescription>Browse and select your preferred healthcare provider</CardDescription>
             </CardHeader>
             <CardContent>
-              {myDoctors.length === 0 ? (
+              {filteredDoctors.length === 0 ? (
                 <div className="text-center py-8">
                   <Stethoscope className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-2 text-sm font-semibold">No doctor assigned</h3>
+                  <h3 className="mt-2 text-sm font-semibold">No doctors found</h3>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    You have not been assigned a healthcare provider yet.
+                    Try adjusting your search or check back later.
                   </p>
                 </div>
               ) : (
-                myDoctors.map((doctor) => (
-                  <Card key={doctor.id} className="mb-4">
-                    <div className="flex items-center space-x-4 p-4">
-                      <Avatar>
-                        <AvatarImage src={doctor.avatar} />
-                        <AvatarFallback>{doctor.name.split(" ").map((n) => n[0]).join("")}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h4 className="font-medium">{doctor.name}</h4>
-                        <p className="text-sm text-muted-foreground">{doctor.specialization}</p>
-                        <p className="text-xs text-muted-foreground">{doctor.email}</p>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredDoctors.map((doctor) => (
+                    <Card key={doctor.id} className="overflow-hidden">
+                      <div className="flex items-center gap-4 p-4">
+                        <Avatar>
+                          <AvatarImage src={doctor.avatar} />
+                          <AvatarFallback>{doctor.name.split(" ").map((n) => n[0]).join("")}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <h4 className="font-medium">{doctor.name}</h4>
+                          <p className="text-sm text-muted-foreground">{doctor.specialization}</p>
+                          <p className="text-xs text-muted-foreground">{doctor.department}</p>
+                          <p className="text-xs text-muted-foreground">{doctor.email}</p>
+                        </div>
+                        {doctor.isMyDoctor ? (
+                          <Badge className="ml-2" variant="default">Assigned</Badge>
+                        ) : (
+                          <Button size="sm" onClick={() => handleSetAsMyDoctor(doctor)}>
+                            Set as My Doctor
+                          </Button>
+                        )}
                       </div>
-                      <Badge variant="outline">{doctor.department}</Badge>
-                    </div>
-                  </Card>
-                ))
+                    </Card>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
