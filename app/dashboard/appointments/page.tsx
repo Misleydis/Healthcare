@@ -322,9 +322,9 @@ export default function AppointmentsPage() {
                             <div className="flex items-center gap-4 border-b p-4 md:w-2/3 md:border-b-0 md:border-r">
                               <Avatar className="h-10 w-10">
                                 <AvatarImage
-                                  src={`/placeholder.svg?height=40&width=40&text=${appointment.doctorName.substring(0, 2)}`}
+                                  src={`/placeholder.svg?height=40&width=40&text=${(appointment.doctorName || "Dr").substring(0, 2)}`}
                                 />
-                                <AvatarFallback>{appointment.doctorName.substring(0, 2)}</AvatarFallback>
+                                <AvatarFallback>{(appointment.doctorName || "Dr").substring(0, 2)}</AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
                                 <h4 className="font-medium">{appointment.doctorName}</h4>
@@ -388,9 +388,9 @@ export default function AppointmentsPage() {
                             <div className="flex items-center gap-4 border-b p-4 md:w-2/3 md:border-b-0 md:border-r">
                               <Avatar className="h-10 w-10">
                                 <AvatarImage
-                                  src={`/placeholder.svg?height=40&width=40&text=${appointment.doctorName.substring(0, 2)}`}
+                                  src={`/placeholder.svg?height=40&width=40&text=${(appointment.doctorName || "Dr").substring(0, 2)}`}
                                 />
-                                <AvatarFallback>{appointment.doctorName.substring(0, 2)}</AvatarFallback>
+                                <AvatarFallback>{(appointment.doctorName || "Dr").substring(0, 2)}</AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
                                 <h4 className="font-medium">{appointment.doctorName}</h4>
@@ -442,9 +442,9 @@ export default function AppointmentsPage() {
                             <div className="flex items-center gap-4 border-b p-4 md:w-2/3 md:border-b-0 md:border-r">
                               <Avatar className="h-10 w-10">
                                 <AvatarImage
-                                  src={`/placeholder.svg?height=40&width=40&text=${appointment.doctorName.substring(0, 2)}`}
+                                  src={`/placeholder.svg?height=40&width=40&text=${(appointment.doctorName || "Dr").substring(0, 2)}`}
                                 />
-                                <AvatarFallback>{appointment.doctorName.substring(0, 2)}</AvatarFallback>
+                                <AvatarFallback>{(appointment.doctorName || "Dr").substring(0, 2)}</AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
                                 <h4 className="font-medium">{appointment.doctorName}</h4>
@@ -494,9 +494,9 @@ export default function AppointmentsPage() {
                                 <div className="flex items-center gap-4 border-b p-4 md:w-2/3 md:border-b-0 md:border-r">
                                   <Avatar className="h-10 w-10">
                                     <AvatarImage
-                                      src={`/placeholder.svg?height=40&width=40&text=${appointment.doctorName.substring(0, 2)}`}
+                                      src={`/placeholder.svg?height=40&width=40&text=${(appointment.doctorName || "Dr").substring(0, 2)}`}
                                     />
-                                    <AvatarFallback>{appointment.doctorName.substring(0, 2)}</AvatarFallback>
+                                    <AvatarFallback>{(appointment.doctorName || "Dr").substring(0, 2)}</AvatarFallback>
                                   </Avatar>
                                   <div className="flex-1">
                                     <h4 className="font-medium">{appointment.doctorName}</h4>

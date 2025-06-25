@@ -78,7 +78,7 @@ export default function DoctorsPage() {
   })
 
   // Group doctors
-  const myDoctors = filteredDoctors.filter((doctor) => doctor.isMyDoctor)
+  const myDoctors = doctors.filter((doctor) => doctor.isMyDoctor)
   const otherDoctors = filteredDoctors.filter((doctor) => !doctor.isMyDoctor)
 
   const handleViewDoctor = (doctor: any) => {
@@ -192,6 +192,57 @@ export default function DoctorsPage() {
       title: "Doctor deleted",
       description: "The doctor has been successfully removed from the system.",
     })
+  }
+
+  // If patient, show only their assigned doctors
+  if (isPatient) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <main className="flex-1 space-y-4 p-8 pt-6">
+          <div className="flex flex-col justify-between space-y-4 md:flex-row md:items-center md:space-y-0">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight">My Doctor</h2>
+              <p className="text-muted-foreground">View your assigned healthcare provider(s)</p>
+            </div>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Assigned Doctor(s)</CardTitle>
+              <CardDescription>Your current healthcare provider(s)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {myDoctors.length === 0 ? (
+                <div className="text-center py-8">
+                  <Stethoscope className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <h3 className="mt-2 text-sm font-semibold">No doctor assigned</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    You have not been assigned a healthcare provider yet.
+                  </p>
+                </div>
+              ) : (
+                myDoctors.map((doctor) => (
+                  <Card key={doctor.id} className="mb-4">
+                    <div className="flex items-center space-x-4 p-4">
+                      <Avatar>
+                        <AvatarImage src={doctor.avatar} />
+                        <AvatarFallback>{doctor.name.split(" ").map((n) => n[0]).join("")}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h4 className="font-medium">{doctor.name}</h4>
+                        <p className="text-sm text-muted-foreground">{doctor.specialization}</p>
+                        <p className="text-xs text-muted-foreground">{doctor.email}</p>
+                      </div>
+                      <Badge variant="outline">{doctor.department}</Badge>
+                    </div>
+                  </Card>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    )
   }
 
   // Check if user is admin
