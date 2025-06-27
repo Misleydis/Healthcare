@@ -1,3 +1,4 @@
+import '../lib/sample-data';
 import type { Metadata } from 'next'
 import './globals.css'
 
