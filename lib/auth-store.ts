@@ -143,35 +143,6 @@ const useAuthStore = create<AuthState>()(
             return true
           }
 
-          // Local dev fallback for demo doctor
-          if (
-            process.env.NODE_ENV === 'development' &&
-            email === 'kuda@gmail.com' &&
-            password === 'Kuda123'
-          ) {
-            const demoDoctor: User = {
-              id: 'doctor-kuda',
-              email: 'kuda@gmail.com',
-              firstName: 'Kudakwashe',
-              lastName: 'Moyo',
-              name: 'Dr. Kudakwashe Moyo',
-              role: 'doctor',
-              specialty: 'Cardiology',
-              phoneNumber: '+263771234567',
-              address: '',
-              bio: 'Demo doctor for presentation',
-              createdAt: new Date().toISOString(),
-              professionalId: 'MDZ001',
-            }
-            set({
-              userData: demoDoctor,
-              isAuthenticated: true,
-              loading: false,
-              error: null,
-            })
-            return true
-          }
-
           const response = await fetch("https://auth-backend-qyna.onrender.com/api/login", {
             method: "POST",
             headers: {
